@@ -12,7 +12,7 @@ dash = "^2.18.1"
 pandas = "^2.2.3"
 plotly = "^5.24.1"
 dash-mantine-components = "^0.14.6"
-qiskit = { extras = ["visualization"], version = "^1.2.4" }
+qiskit = {extras = ["visualization", "qasm3-import"], version = "^1.2.4"}
 
 
 [build-system]
