@@ -1,21 +1,58 @@
+import copy
+
 import dash_mantine_components as dmc
 import numpy as np
-from dash import Input, Output
+from dash import Input, Output, dcc
+import plotly.graph_objects as go
 
-from src.utils.qiskit_utils import deserialize_statevector
+from src.backend.qiskit.qiskit_utils import deserialize_statevector
 
 
 def create_visualization_shots(app):
+    fig = go.Figure()
+    fig.update_layout(
+        xaxis_title="Computational basis states",
+        yaxis_title="Counts",
+        barmode='group',  # Group bars together
+        height=384,  # Set chart height
+        plot_bgcolor='#1e1e1e',  # Dark background
+        paper_bgcolor='#1e1e1e',  # Dark paper background,
+        font_color='#ffffff',
+        transition={'duration': 400, 'easing': "cubic-in-out"},
+        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        xaxis=dict(
+            zerolinecolor="#333333",
+            gridcolor="#333333",  # Set grid color to light gray
+            tickfont_color="#fff",
+        ),
+        yaxis=dict(
+            zerolinecolor="#333333",
+            gridcolor="#333333",  # Set grid color to light gray
+            tickfont_color="#fff",
+        ),
+    )
+
+    fig.add_trace(go.Bar(
+        name='Ideal',
+        marker_color='blue'
+    ))
+
+    fig.add_trace(go.Bar(
+        name='Noisy',
+        marker_color='red'
+    ))
+
     @app.callback(
-        Output('visualization-shots', 'data'),
+        Output('visualization-shots', 'figure'),
         Input('simulation-results', 'data'),
-        Input('select-state-vector', 'value'),
-        prevent_initial_call=True
+        Input('select-state-vector', 'value')
     )
     def update_data(simulation_results, state_vector):
-        # Return an empty list if no state vector is selected
         if state_vector is None:
-            return []
+            fig.update_traces(selector=dict(name="Ideal"), y=[])
+            fig.update_traces(selector=dict(name="Noisy"), y=[])
+
+            return fig
 
         # Extract ideal and noisy state vectors
         state_vectors_ideal = simulation_results['ideal'][state_vector]
@@ -35,33 +72,22 @@ def create_visualization_shots(app):
         # Generate binary combinations for results
         basis_states = [format(i, f'0{num_qubits}b') for i in range(num_results)]
 
-        # Format results for output
-        formatted_results = [
-            {
-                "basis_state": basis_states[i],
-                "Ideal": totals_ideal[i],
-                "Noisy": totals_noisy[i]
-            }
-            for i in range(len(basis_states))
-        ]
+        fig.update_traces(
+            selector=dict(name="Ideal"),
+            x=basis_states,
+            y=totals_ideal
+        )
+        fig.update_traces(
+            selector=dict(name="Noisy"),
+            x=basis_states,
+            y=totals_noisy
+        )
 
-        return formatted_results
+        return fig
 
     return dmc.Stack(
         [
             dmc.Title('Shots', order=4),
-            dmc.BarChart(
-                id='visualization-shots',
-                h=256,
-                data=[],
-                dataKey="basis_state",
-                xAxisLabel="Computational basis states",
-                yAxisLabel="Counts",
-                barProps={"isAnimationActive": True},
-                series=[
-                    {"name": "Ideal", "color": "blue"},
-                    {"name": "Noisy", "color": "red"}
-                ]
-            )
+            dcc.Graph(id='visualization-shots', figure=fig),
         ]
     )

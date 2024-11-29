@@ -14,6 +14,7 @@ plotly = "^5.24.1"
 dash-mantine-components = "^0.14.6"
 qiskit = {extras = ["visualization", "qasm3-import"], version = "^1.2.4"}
 qiskit-aer = "^0.15.1"
+natsort = "^8.4.0"
 
 
 [build-system]

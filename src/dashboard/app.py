@@ -1,10 +1,9 @@
 import dash_mantine_components as dmc
 from dash import Dash, _dash_renderer
 
-from src.dashboard.components.atoms.circuit_diagram import create_circuit_diagram
-from src.dashboard.components.organisms.middle import create_middle
 from src.dashboard.components.organisms.pane_params import create_pane_params
 from src.dashboard.components.organisms.pane_qasm import create_pane_qasm
+from src.dashboard.components.organisms.pane_visualizations import create_visualizations
 from src.dashboard.components.organisms.toolbar import create_toolbar
 
 # Dash Mantine Components is based on REACT 18. You must set the env variable REACT_VERSION=18.2.0 before starting up the app.
@@ -45,7 +44,7 @@ app.layout = dmc.MantineProvider(
                 dmc.Flex(
                     [
                         create_pane_qasm(app),
-                        create_middle(app),
+                        create_visualizations(app),
                         create_pane_params(app),
                     ],
                     h="100%"

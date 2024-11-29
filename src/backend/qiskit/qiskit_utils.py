@@ -1,20 +1,16 @@
-import numpy as np
 from qiskit import QuantumCircuit
 from qiskit.converters import dag_to_circuit, circuit_to_dag
 from qiskit.quantum_info import Statevector
 
+from src.utils.complex_utils import serialize_complex_array, deserialize_complex_array
+
 
 def serialize_statevector(statevector):
-    # Convert to a regular array with real and imaginary parts
-    real_parts = np.real(statevector.data).tolist()
-    imag_parts = np.imag(statevector.data).tolist()
-
-    return [(r, i) for r, i in zip(real_parts, imag_parts)]
+    return serialize_complex_array(statevector.data)
 
 
 def deserialize_statevector(state):
-    complex_array = [complex(r, i) for r, i in state]
-    return Statevector(complex_array)
+    return Statevector(deserialize_complex_array(state))
 
 
 def insert_save_statevectors(circuit: QuantumCircuit, prefix='sv') -> QuantumCircuit:

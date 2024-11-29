@@ -1,12 +1,14 @@
 import dash_mantine_components as dmc
 from dash import Output, Input
 
-from src.dashboard.components.atoms.circuit_diagram import create_circuit_diagram
+from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualizatioh_circuit_diagram
 from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
+from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
 from src.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
+from src.dashboard.components.atoms.visualization_qsphere import create_visualization_qsphere
 
 
-def create_middle(app):
+def create_visualizations(app):
     @app.callback(
         Output('select-state-vector', 'data'),
         Input('simulation-results', 'data'),
@@ -25,8 +27,8 @@ def create_middle(app):
     )
     def update_visualize_shot_max(shots):
         marks = [
-            {"value": 0, "label": "0"},
-            {"value": shots, "label": str(shots)},
+            {"value": 0, "label": "1"},
+            {"value": shots - 1, "label": str(shots)},
         ]
 
         return shots, marks
@@ -36,7 +38,7 @@ def create_middle(app):
             dmc.Stack(
                 [
                     dmc.Title("Quantum Circuit", order=4),
-                    create_circuit_diagram(app),
+                    create_visualizatioh_circuit_diagram(app),
                 ],
                 p="sm"
             ),
@@ -44,24 +46,23 @@ def create_middle(app):
             dmc.Stack([
                 dmc.Flex(
                     [
-                        dmc.Stack(
-                            [
-                                dmc.Text("Which execution/shot to visualize?", size="sm"),
-                                dmc.Slider(
-                                    id='input-visualize-shot',
-                                    min=0,
-                                    max=100,
-                                    value=0
-                                ),
-                            ],
-                            w='100%'
-                        ),
-
                         dmc.Select(
                             id='select-state-vector',
                             label='Which state vectors to include in visualization?',
                             placeholder='Select state vectors',
                             data=[],
+                            w='100%'
+                        ),
+                        dmc.Stack(
+                            [
+                                dmc.Text("Which execution/shot to visualize?", size="sm"),
+                                dmc.Slider(
+                                    id='input-visualize-shot',
+                                    min=1,
+                                    max=100,
+                                    value=1
+                                ),
+                            ],
                             w='100%'
                         ),
                     ],
@@ -70,11 +71,19 @@ def create_middle(app):
                 dmc.Grid(
                     [
                         dmc.GridCol(
+                            create_visualization_shots(app),
+                            span=6
+                        ),
+                        dmc.GridCol(
                             create_visualization_probabilities(app),
                             span=6
                         ),
                         dmc.GridCol(
-                            create_visualization_shots(app),
+                            create_visualization_qsphere(app),
+                            span=6
+                        ),
+                        dmc.GridCol(
+                            create_visualization_fidelity(app),
                             span=6
                         )
                     ],
