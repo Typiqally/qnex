@@ -6,7 +6,7 @@ from src.dashboard.styling import default_border
 def create_toolbar():
     return dmc.Flex(
         [
-            dmc.Title("QC Noise Visualization", order=4),
+            dmc.Title("QNEX", order=4),
         ],
         p="sm",
         direction={"base": "column", "sm": "row"},
