@@ -26,6 +26,7 @@ def create_visualizations(app):
         Input('input-shots', 'value')
     )
     def update_visualize_shot_max(shots):
+        shots = shots or 1
         marks = [
             {"value": 0, "label": "1"},
             {"value": shots - 1, "label": str(shots)},

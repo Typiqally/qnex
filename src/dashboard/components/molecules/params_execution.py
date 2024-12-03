@@ -79,7 +79,7 @@ def create_params_execution(app):
         simulator.load_circuit(qasm_str)
 
         # Simulate the circuit with ideal and noisy conditions
-        results_ideal, results_noisy = simulator.simulate(shots, current_noise_params)
+        results_ideal, results_noisy = simulator.simulate(shots or 1, current_noise_params)
 
         # Return the processed results
         return {

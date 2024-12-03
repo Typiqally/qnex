@@ -61,7 +61,7 @@ class QiskitSimulator(BaseSimulator):
                     if noise_type == NoiseModelType.THERMAL_RELAXATION:
                         thermal_relaxation_params = noise_params_gate.get(param_key, None)
 
-                        if thermal_relaxation_params["enabled"]:
+                        if thermal_relaxation_params is not None and thermal_relaxation_params["enabled"]:
                             error = self._create_thermal_relaxation_error(thermal_relaxation_params)
                     else:
                         noise_prob = noise_params_gate.get(param_key, 0) / 100
@@ -156,8 +156,7 @@ class QiskitSimulator(BaseSimulator):
             "h": Gate(
                 name="H (Hadamard)",
                 description="Creates superposition states",
-                noise_models=[NoiseModelType.BIT_FLIP, NoiseModelType.PHASE_FLIP, NoiseModelType.PHASE_DAMPING, NoiseModelType.AMPLITUDE_DAMPING,
-                              NoiseModelType.DEPOLARIZING, NoiseModelType.THERMAL_RELAXATION],
+                noise_models=[NoiseModelType.BIT_FLIP, NoiseModelType.PHASE_FLIP, NoiseModelType.DEPOLARIZING, NoiseModelType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "s": Gate(
