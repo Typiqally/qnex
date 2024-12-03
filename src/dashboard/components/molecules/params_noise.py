@@ -41,9 +41,9 @@ def create_thermal_relaxation(value: dict[str, int]):
         dmc.NumberInput(
             id={"type": "noise-param", "index": "thermal-relaxation-gate-time"},
             label="Gate time",
-            description="Execution time in nanoseconds",
+            description="Execution time in microseconds",
             value=value.get("gate-time", 50),
-            rightSection="ns"
+            rightSection="µs"
         ),
         dmc.Grid(
             [
