@@ -15,7 +15,7 @@ meas[1] = measure q[1];
 def create_qasm_input(app):
     return dmc.Stack([
         dcc.Store(id='qasm'),
-        dmc.Title("OpenQASM 3.0", order=4),
+        dmc.Title("OpenQASM", order=4),
         dmc.Textarea(
             id='input-qasm',
             label="Enter valid script",
