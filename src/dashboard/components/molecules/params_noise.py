@@ -81,6 +81,52 @@ NOISE_PARAMS_COMPONENT_MAP = {
 
 
 def create_params_noise(app):
+    profile_manager = app.server.profile_manager
+
+    @app.callback(
+        Output('select-noise-profile', 'data'),
+        Output('select-noise-profile', 'value'),
+        Input('btn-noise-profile-save', 'n_clicks'),
+        State('noise-profile-name', 'value'),
+        State('noise-params', 'data')
+    )
+    def save_noise_profile(_, profile_name, noise_params):
+        if profile_name is None:
+            return profile_manager.list_profiles(), None
+
+        profile_manager.save_profile(profile_name, noise_params)
+
+        return profile_manager.list_profiles(), profile_name
+
+    @app.callback(
+        Output('select-noise-profile', 'data', allow_duplicate=True),
+        Output('select-noise-profile', 'value', allow_duplicate=True),
+        Input('btn-noise-profile-delete', 'n_clicks'),
+        State('select-noise-profile', 'value'),
+        prevent_initial_call=True
+    )
+    def delete_noise_profile(_, selected_profile):
+        if selected_profile is None:
+            return profile_manager.list_profiles(), None
+
+        profile_manager.delete_profile(selected_profile)
+
+        return profile_manager.list_profiles(), None
+
+    @app.callback(
+        Output('noise-params', 'data'),
+        Output('noise-profile-name', 'value'),
+        Input('select-noise-profile', 'value'),
+        prevent_initial_call=True
+    )
+    def update_noise_profiles(selected_profile):
+        if selected_profile is None:
+            return {}, None
+
+        profile = profile_manager.load_profile(selected_profile)
+
+        return profile, selected_profile
+
     @app.callback(
         Output('select-gate', 'data'),
         Input('select-simulator', 'value'),
@@ -129,11 +175,12 @@ def create_params_noise(app):
         return [dmc.Alert(id="noise-gate-description", color="blue", children=gate_info.description)] + gate_noise_params_components
 
     @app.callback(
-        Output("noise-params", "data"),
+        Output("noise-params", "data", allow_duplicate=True),
         Input('select-gate', 'value'),
         Input({"type": "noise-param", "index": ALL}, "value"),
         Input({"type": "noise-param", "index": ALL}, "checked"),
         State("noise-params", "data"),
+        prevent_initial_call=True,
     )
     def update_dynamic_params(gate_ref, values, checked_values, current_noise_params):
         current_noise_params = current_noise_params or {}
@@ -161,34 +208,47 @@ def create_params_noise(app):
 
         current_noise_params[gate_ref] = noise_gate_params
 
-        print(current_noise_params)
-
         return current_noise_params
 
     return dmc.Stack([
         dcc.Store(id='noise-params'),
         dmc.Title("Noise profile", order=4),
-        dmc.Select(
-            label="Profile",
-            placeholder="Select a profile",
-            id="profile-select",
-            data=[
-                # {"value": "ibmq_lima", "label": "ibmq_lima"},
-                # {"value": "ibmq_ourense", "label": "ibmq_ourense"},
-                # {"value": "ibmq_belem", "label": "ibmq_belem"},
-                # {"value": "ibmq_manila", "label": "ibmq_manila"},
-                # {"value": "ibmq_quito", "label": "ibmq_quito"},
-                # {"value": "ibmq_jakarta", "label": "ibmq_jakarta"},
-            ]
+        dmc.Grid(
+            [
+                dmc.GridCol(
+                    dmc.Select(
+                        label="Profile",
+                        placeholder="Select a profile",
+                        id="select-noise-profile",
+                        data=[]
+                    ),
+                    span=8
+                ),
+                dmc.GridCol(
+                    dmc.Button(
+                        "Delete",
+                        id="btn-noise-profile-delete",
+                        color="red"
+                    ),
+                    span=4
+                )
+            ],
+            align="flex-end",
         ),
         dmc.Grid(
             [
                 dmc.GridCol(
-                    dmc.TextInput(label="New profile name"),
+                    dmc.TextInput(
+                        id="noise-profile-name",
+                        label="Profile name"
+                    ),
                     span=8
                 ),
                 dmc.GridCol(
-                    dmc.Button("Save"),
+                    dmc.Button(
+                        "Save",
+                        id="btn-noise-profile-save"
+                    ),
                     span=4
                 )
             ],
