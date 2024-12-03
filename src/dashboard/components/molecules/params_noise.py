@@ -71,7 +71,8 @@ def create_thermal_relaxation(value: dict[str, int]):
 # TODO: This is so ugly, should find a nicer way for this
 NOISE_PARAMS_COMPONENT_MAP = {
     NoiseModelType.DEPOLARIZING: lambda noise_params: create_slider("depolarizing", "Depolarizing Probability", noise_params.get("depolarizing", 0)),
-    NoiseModelType.AMPLITUDE_DAMPING: lambda noise_params: create_slider("amplitude-damping", "Amplitude Damping Probability", noise_params.get("amplitude-damping", 0)),
+    NoiseModelType.AMPLITUDE_DAMPING: lambda noise_params: create_slider("amplitude-damping", "Amplitude Damping Probability",
+                                                                         noise_params.get("amplitude-damping", 0)),
     NoiseModelType.PHASE_DAMPING: lambda noise_params: create_slider("phase-damping", "Phase Damping Probability", noise_params.get("phase-damping", 0)),
     NoiseModelType.READOUT_ERROR: lambda noise_params: create_slider("readout-error", "Readout Error Probability", noise_params.get("readout-error", 0)),
     NoiseModelType.BIT_FLIP: lambda noise_params: create_slider("bit-flip", "Bit Flip Probability", noise_params.get("bit-flip", 0)),
@@ -154,7 +155,7 @@ def create_params_noise(app):
         Output('noise-gate-params', 'children'),
         Input('select-gate', 'value'),
         Input('select-simulator', 'value'),
-        State("noise-params", "data"),
+        State("noise-params", 'data'),
     )
     def update_gate_noise_params_children(gate_ref, simulator_ref, current_noise_params):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
