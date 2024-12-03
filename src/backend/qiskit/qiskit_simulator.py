@@ -1,5 +1,5 @@
 from natsort import natsorted
-from qiskit import qasm3
+from qiskit import qasm3, qasm2
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, ReadoutError, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
 
@@ -12,8 +12,18 @@ class QiskitSimulator(BaseSimulator):
         self.circuit = None
 
     def load_circuit(self, qasm_str: str):
-        # Insert instructions to save statevectors in the circuit
-        self.circuit = insert_save_statevectors(qasm3.loads(qasm_str))
+
+        try:
+            # Check the QASM version in the input string
+            if "OPENQASM 3.0;" in qasm_str:
+                # Parse the QASM string as qasm2
+                self.circuit = insert_save_statevectors(qasm3.loads(qasm_str))
+            else:
+                # Parse the QASM string as qasm3 (default or assumed version)
+                self.circuit = insert_save_statevectors(qasm2.loads(qasm_str))
+        except Exception as e:
+            pass
+
 
     def create_noise_model(self, noise_params: dict) -> NoiseModel:
         noise_model = NoiseModel()

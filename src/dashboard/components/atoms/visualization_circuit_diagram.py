@@ -3,7 +3,7 @@ from io import BytesIO
 
 import plotly.graph_objects as go
 from dash import Output, Input, dcc
-from qiskit import qasm3
+from qiskit import qasm3, qasm2
 from qiskit.visualization import circuit_drawer
 
 
@@ -32,11 +32,15 @@ def create_visualizatioh_circuit_diagram(app):
         Output('visualization-circuit-diagram', 'figure'),
         Input('input-qasm', 'value')
     )
-    def update_diagram(qasm):
+    def update_diagram(qasm_str):
         try:
             # Load the circuit from QASM
-            circuit = qasm3.loads(qasm)
-            # circuit = insert_save_statevectors(circuit)
+            if "OPENQASM 3.0;" in qasm_str:
+                # Parse the QASM string as qasm
+                circuit = qasm3.loads(qasm_str)
+            else:
+                # Parse the QASM string as qasm3 (default or assumed version)
+                circuit = qasm2.loads(qasm_str)
 
             # Draw the circuit with customized style
             circuit_fig = circuit_drawer(circuit, output='mpl', style={
@@ -73,7 +77,7 @@ def create_visualizatioh_circuit_diagram(app):
 
             # Return the image as a base64-encoded PNG
             return fig
-        except qasm3.QASM3ImporterError:
+        except (qasm3.QASM3ImporterError, qasm2.QASM2ParseError) as e:
             # Provide fallback image in case of error
             return fig
         except Exception as e:
