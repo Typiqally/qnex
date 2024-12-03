@@ -5,7 +5,7 @@ from src.backend.base_simulator import NoiseModelType
 from src.backend.registry import SIMULATOR_REGISTRY
 
 
-def create_slider(component_id_index: str, label: str, value: int = 0):
+def create_probability_slider(component_id_index: str, label: str, value: int = 0):
     return dmc.Grid(
         [
             dmc.GridCol(dmc.Text(label, size="sm"), span=4),
@@ -26,58 +26,48 @@ def create_slider(component_id_index: str, label: str, value: int = 0):
     )
 
 
-def create_thermal_relaxation(value: dict[str, int]):
-    return dmc.Stack([
-        dmc.Flex(
-            [
-                dmc.Text("Thermal relaxation", size="sm"),
-                dmc.Switch(
-                    id={"type": "noise-param", "index": "thermal-relaxation-enabled"},
-                    checked=value.get("enabled", False)
-                ),
-            ],
-            justify="space-between"
-        ),
-        dmc.NumberInput(
-            id={"type": "noise-param", "index": "thermal-relaxation-gate-time"},
-            label="Gate time",
-            description="Execution time in microseconds",
-            value=value.get("gate-time", 50),
-            rightSection="µs"
-        ),
-        dmc.Grid(
-            [
-                dmc.GridCol(
-                    dmc.NumberInput(
-                        id={"type": "noise-param", "index": "thermal-relaxation-t1"},
-                        label="Relaxation Time (T1)",
-                        value=value.get("t1", 30),
-                        rightSection="µs"),
-                    span=6
-                ),
-                dmc.GridCol(
-                    dmc.NumberInput(
-                        id={"type": "noise-param", "index": "thermal-relaxation-t2"},
-                        label="Dephasing Time (T2)",
-                        value=value.get("t2", 20),
-                        rightSection="µs"
-                    ),
-                    span=6)
-            ]
-        ),
-    ])
+def create_switch(component_id_index: str, label: str, value: bool = False):
+    return dmc.Flex(
+        [
+            dmc.Text(label, size="sm"),
+            dmc.Switch(
+                id={"type": "noise-param", "index": component_id_index},
+                checked=value
+            ),
+        ],
+        justify="space-between"
+    )
 
 
 # TODO: This is so ugly, should find a nicer way for this
 NOISE_PARAMS_COMPONENT_MAP = {
-    NoiseModelType.DEPOLARIZING: lambda noise_params: create_slider("depolarizing", "Depolarizing Probability", noise_params.get("depolarizing", 0)),
-    NoiseModelType.AMPLITUDE_DAMPING: lambda noise_params: create_slider("amplitude-damping", "Amplitude Damping Probability",
-                                                                         noise_params.get("amplitude-damping", 0)),
-    NoiseModelType.PHASE_DAMPING: lambda noise_params: create_slider("phase-damping", "Phase Damping Probability", noise_params.get("phase-damping", 0)),
-    NoiseModelType.READOUT_ERROR: lambda noise_params: create_slider("readout-error", "Readout Error Probability", noise_params.get("readout-error", 0)),
-    NoiseModelType.BIT_FLIP: lambda noise_params: create_slider("bit-flip", "Bit Flip Probability", noise_params.get("bit-flip", 0)),
-    NoiseModelType.PHASE_FLIP: lambda noise_params: create_slider("phase-flip", "Phase Flip Probability", noise_params.get("phase-flip", 0)),
-    NoiseModelType.THERMAL_RELAXATION: lambda noise_params: create_thermal_relaxation(noise_params.get("thermal-relaxation", {}))
+    NoiseModelType.DEPOLARIZING: lambda noise_params: create_probability_slider(
+        "depolarizing",
+        "Depolarizing Probability",
+        noise_params.get("depolarizing", 0)
+    ),
+    NoiseModelType.AMPLITUDE_DAMPING: lambda noise_params: create_probability_slider(
+        "amplitude-damping",
+        "Amplitude Damping",
+        noise_params.get("amplitude-damping", 0)
+    ),
+    NoiseModelType.PHASE_DAMPING: lambda noise_params: create_probability_slider(
+        "phase-damping",
+        "Phase Damping",
+        noise_params.get("phase-damping", 0)
+    ),
+    NoiseModelType.READOUT_ERROR: lambda noise_params: create_probability_slider(
+        "readout-error",
+        "Readout Error Probability",
+        noise_params.get("readout-error", 0)
+    ),
+    NoiseModelType.BIT_FLIP: lambda noise_params: create_probability_slider("bit-flip", "Bit Flip Probability", noise_params.get("bit-flip", 0)),
+    NoiseModelType.PHASE_FLIP: lambda noise_params: create_probability_slider("phase-flip", "Phase Flip Probability", noise_params.get("phase-flip", 0)),
+    NoiseModelType.THERMAL_RELAXATION: lambda noise_params: create_switch(
+        "thermal-relaxation",
+        "Thermal Relaxation",
+        noise_params.get("thermal-relaxation", False)
+    )
 }
 
 
@@ -173,7 +163,38 @@ def create_params_noise(app):
             for noise_model in gate_info.noise_models
         ]
 
-        return [dmc.Alert(id="noise-gate-description", color="blue", children=gate_info.description)] + gate_noise_params_components
+        other_components = [
+            dmc.Alert(id="noise-gate-description", color="blue", children=gate_info.description),
+            dmc.NumberInput(
+                id={"type": "noise-param", "index": "gate-time"},
+                label="Gate time",
+                description="Execution time in microseconds",
+                value=current_noise_params.get("gate-time", 50),
+                rightSection="µs"
+            ),
+            dmc.Grid(
+                [
+                    dmc.GridCol(
+                        dmc.NumberInput(
+                            id={"type": "noise-param", "index": "t1"},
+                            label="Relaxation Time (T1)",
+                            value=current_noise_params.get("t1", 30),
+                            rightSection="µs"),
+                        span=6
+                    ),
+                    dmc.GridCol(
+                        dmc.NumberInput(
+                            id={"type": "noise-param", "index": "t2"},
+                            label="Dephasing Time (T2)",
+                            value=current_noise_params.get("t2", 20),
+                            rightSection="µs"
+                        ),
+                        span=6)
+                ]
+            )
+        ]
+
+        return other_components + gate_noise_params_components
 
     @app.callback(
         Output("noise-params", "data", allow_duplicate=True),
@@ -198,14 +219,7 @@ def create_params_noise(app):
             if param_value is None:
                 param_value = param_checked
 
-            # TODO: This is so ugly, should find a nicer way for this
-            if param_id.startswith("thermal-relaxation-"):
-                _, sub_param = param_id.split("thermal-relaxation-", 1)
-                if "thermal-relaxation" not in noise_gate_params:
-                    noise_gate_params["thermal-relaxation"] = {}
-                noise_gate_params["thermal-relaxation"][sub_param] = param_value
-            else:
-                noise_gate_params[param_id] = param_value
+            noise_gate_params[param_id] = param_value
 
         current_noise_params[gate_ref] = noise_gate_params
 

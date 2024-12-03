@@ -24,7 +24,6 @@ class QiskitSimulator(BaseSimulator):
         except Exception as e:
             pass
 
-
     def create_noise_model(self, noise_params: dict) -> NoiseModel:
         noise_model = NoiseModel()
         supported_gates = self.supported_gates()
@@ -45,6 +44,13 @@ class QiskitSimulator(BaseSimulator):
                 noise_model.add_all_qubit_readout_error(readout_error)
                 continue
 
+            gate_time = noise_params_gate.get('gate-time', 0)
+            t1 = noise_params_gate.get('t1', 30)  # Default T1 if not provided
+            t2 = noise_params_gate.get('t2', 20)  # Default T2 if not provided
+
+            if not t2 <= 2 * t1:
+                raise Exception("")
+
             # Check for each noise model type and apply corresponding noise
             noise_types = {
                 NoiseModelType.BIT_FLIP: 'bit-flip',
@@ -58,11 +64,12 @@ class QiskitSimulator(BaseSimulator):
             for noise_type, param_key in noise_types.items():
                 if noise_type in gate.noise_models:
                     error = None
-                    if noise_type == NoiseModelType.THERMAL_RELAXATION:
-                        thermal_relaxation_params = noise_params_gate.get(param_key, None)
 
-                        if thermal_relaxation_params is not None and thermal_relaxation_params["enabled"]:
-                            error = self._create_thermal_relaxation_error(thermal_relaxation_params)
+                    noise_param = noise_params_gate.get(param_key, None)
+
+                    if noise_type == NoiseModelType.THERMAL_RELAXATION:
+                        if noise_param:
+                            error = thermal_relaxation_error(t1, t2, gate_time)
                     else:
                         noise_prob = noise_params_gate.get(param_key, 0) / 100
 
@@ -97,18 +104,6 @@ class QiskitSimulator(BaseSimulator):
         elif noise_type == NoiseModelType.DEPOLARIZING:
             return depolarizing_error(normalized_prob, num_qubits)
         return None
-
-    def _create_thermal_relaxation_error(self, thermal_relaxation_params: dict):
-        """Helper method to create thermal relaxation error using Qiskit's thermal_relaxation_error."""
-        gate_time = thermal_relaxation_params.get('gate-time', 0)
-        t1 = thermal_relaxation_params.get('t1', 30)  # Default T1 if not provided
-        t2 = thermal_relaxation_params.get('t2', 20)  # Default T2 if not provided
-
-        if not t2 <= 2 * t1:
-            raise Exception("")
-
-        # Generate the thermal relaxation error
-        return thermal_relaxation_error(t1, t2, gate_time)
 
     def simulate(self, shots: int, noise_params: dict):
         ideal_simulator = AerSimulator()
@@ -156,7 +151,8 @@ class QiskitSimulator(BaseSimulator):
             "h": Gate(
                 name="H (Hadamard)",
                 description="Creates superposition states",
-                noise_models=[NoiseModelType.BIT_FLIP, NoiseModelType.PHASE_FLIP, NoiseModelType.DEPOLARIZING, NoiseModelType.THERMAL_RELAXATION],
+                noise_models=[NoiseModelType.BIT_FLIP, NoiseModelType.PHASE_FLIP, NoiseModelType.PHASE_DAMPING, NoiseModelType.AMPLITUDE_DAMPING,
+                              NoiseModelType.DEPOLARIZING, NoiseModelType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "s": Gate(
