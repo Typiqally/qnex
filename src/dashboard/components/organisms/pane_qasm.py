@@ -7,6 +7,7 @@ from src.dashboard.styling import default_border
 def create_pane_qasm(app):
     return dmc.Container(
         dmc.Stack([
+            dmc.Title("OpenQASM", order=4),
             create_qasm_input(app),
             dmc.Divider(variant="solid"),
         ]),
