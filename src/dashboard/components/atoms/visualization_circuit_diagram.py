@@ -7,7 +7,7 @@ from qiskit import qasm3, qasm2
 from qiskit.visualization import circuit_drawer
 
 
-def create_visualizatioh_circuit_diagram(app):
+def create_visualization_circuit_diagram(app):
     fig = go.Figure()
     fig.update_layout(
         paper_bgcolor="#1e1e1e",  # Set background color

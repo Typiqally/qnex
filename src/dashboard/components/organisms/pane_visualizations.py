@@ -1,7 +1,7 @@
 import dash_mantine_components as dmc
 from dash import Output, Input
 
-from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualizatioh_circuit_diagram
+from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
 from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
 from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
 from src.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
@@ -39,7 +39,7 @@ def create_visualizations(app):
             dmc.Stack(
                 [
                     dmc.Title("Quantum Circuit", order=4),
-                    create_visualizatioh_circuit_diagram(app),
+                    create_visualization_circuit_diagram(app),
                 ],
                 p="sm"
             ),
