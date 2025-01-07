@@ -1,5 +1,7 @@
 import dash_mantine_components as dmc
+import diskcache
 from dash import Dash, _dash_renderer
+from dash.long_callback import DiskcacheLongCallbackManager
 
 from src.dashboard.components.organisms.pane_params import create_pane_params
 from src.dashboard.components.organisms.pane_qasm import create_pane_qasm
@@ -16,8 +18,12 @@ external_scripts = [
     'https://fonts.googleapis.com/css2?family=Poiret+One&display=swap',
 ]
 
+# Initialize long callback manager for long-running jobs
+cache = diskcache.Cache("./.cache")
+long_callback_manager = DiskcacheLongCallbackManager(cache)
+
 # Initialize Dash app
-app = Dash(__name__, external_scripts=external_scripts + dmc.styles.ALL)
+app = Dash(__name__, external_scripts=external_scripts + dmc.styles.ALL, long_callback_manager=long_callback_manager)
 server = app.server
 
 # https://stackoverflow.com/questions/69258350/difficulty-getting-custom-google-font-working-for-plotly-dash-app

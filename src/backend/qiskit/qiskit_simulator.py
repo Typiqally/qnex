@@ -11,6 +11,7 @@ from src.backend.types import NoiseParameterType, Gate
 class QiskitSimulator(BaseSimulator):
     def __init__(self):
         self.circuit = None
+        self.simulator = AerSimulator()
 
     def load_circuit(self, qasm_str: str):
 
@@ -107,13 +108,17 @@ class QiskitSimulator(BaseSimulator):
 
         return None
 
-    def simulate(self, shots: int, noise_model: dict):
-        ideal_simulator = AerSimulator()
-        noisy_simulator = AerSimulator(noise_model=self.create_noise_model(noise_model))
+    def simulate(self, shots: int, seed: Optional[int], noise_model_params: dict):
+        # Ensure that seed is the same for both simulator runs
+        if seed is None:
+            seed = random.randint(1, 10000)
+
+        noise_model = self.create_noise_model(noise_model_params)
+        # noise_model = NoiseModel.from_backend(FakeSantiagoV2())
 
         # Apply noise model if provided
-        result_ideal = ideal_simulator.run(self.circuit, shots=shots, memory=True).result()
-        result_noisy = noisy_simulator.run(self.circuit, shots=shots, memory=True).result()
+        result_ideal = self.simulator.run(self.circuit, shots=shots, memory=True, seed_simulator=seed).result()
+        result_noisy = self.simulator.run(self.circuit, shots=shots, memory=True, seed_simulator=seed, noise_model=noise_model).result()
 
         # TODO: Move utility function
         def process_results(results):
