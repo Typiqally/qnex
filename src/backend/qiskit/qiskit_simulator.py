@@ -1,7 +1,11 @@
+import random
+from typing import Optional
+
 from natsort import natsorted
 from qiskit import qasm3, qasm2
 from qiskit_aer import AerSimulator
-from qiskit_aer.noise import NoiseModel, ReadoutError, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
+from qiskit_aer.noise import NoiseModel, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
+from qiskit_ibm_runtime.fake_provider.fake_provider import FakeSantiagoV2
 
 from src.backend.base_simulator import BaseSimulator
 from src.backend.qiskit.qiskit_utils import insert_save_statevectors, serialize_statevector
@@ -27,7 +31,7 @@ class QiskitSimulator(BaseSimulator):
 
     def create_noise_model(self, noise_model: dict) -> NoiseModel:
         model = NoiseModel()
-        supported_gates = self.supported_gates()
+        supported_gates = self.supported_operations()
 
         for gate_ref, noise_model_gate in noise_model.items():
             quantum_errors = []
@@ -49,30 +53,21 @@ class QiskitSimulator(BaseSimulator):
             t1 = noise_model_gate.get('t1', 30)  # Default T1 if not provided
             t2 = noise_model_gate.get('t2', 20)  # Default T2 if not provided
 
-            if not t2 <= 2 * t1:
-                raise Exception("")
-
             # Check for each noise model type and apply corresponding noise
-            noise_types = {
-                NoiseParameterType.BIT_FLIP: 'bit-flip',
-                NoiseParameterType.PHASE_FLIP: 'phase-flip',
-                NoiseParameterType.AMPLITUDE_DAMPING: 'amplitude-damping',
-                NoiseParameterType.PHASE_DAMPING: 'phase-damping',
-                NoiseParameterType.DEPOLARIZING: 'depolarizing',
-                NoiseParameterType.THERMAL_RELAXATION: 'thermal-relaxation',
-            }
+            for noise_type in NoiseParameterType:
+                error = None
 
-            for noise_type, param_key in noise_types.items():
-                if noise_type in gate.noise_models:
-                    error = None
-
-                    noise_param = noise_model_gate.get(param_key, None)
+                if noise_type in gate.supported_noise_params:
+                    noise_param_value = noise_model_gate.get(noise_type.value, None)
 
                     if noise_type == NoiseParameterType.THERMAL_RELAXATION:
-                        if noise_param:
+                        if noise_param_value:
                             error = thermal_relaxation_error(t1, t2, gate_time)
                     else:
-                        noise_prob = noise_model_gate.get(param_key, 0) / 100
+                        try:
+                            noise_prob = float(noise_param_value or 0) / 100
+                        except ValueError:
+                            noise_prob = 0
 
                         if noise_prob > 0:
                             error = self._create_noise_error(noise_type, noise_prob, gate.num_qubits)
@@ -128,145 +123,193 @@ class QiskitSimulator(BaseSimulator):
 
         return process_results(result_ideal), process_results(result_noisy)
 
-    def supported_gates(self):
+    def supported_operations(self):
         return {
             "id": Gate(
-                name="I (Identity)",
+                short_name="I",
+                long_name="I (Identity)",
                 description="No-op (does nothing)",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING,
+                                        NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "x": Gate(
-                name="X (Pauli-X)",
+                short_name="X",
+                long_name="X (Pauli-X)",
                 description="Bit-flip gate",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING,
+                                        NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "y": Gate(
-                name="Y (Pauli-Y)",
+                short_name="Y",
+                long_name="Y (Pauli-Y)",
                 description="Combination of X and Z rotations",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING, NoiseParameterType.AMPLITUDE_DAMPING,
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING,
+                                        NoiseParameterType.AMPLITUDE_DAMPING,
                                         NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "z": Gate(
-                name="Z (Pauli-Z)",
+                short_name="Z",
+                long_name="Z (Pauli-Z)",
                 description="Phase-flip gate",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING, NoiseParameterType.AMPLITUDE_DAMPING,
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING,
+                                        NoiseParameterType.AMPLITUDE_DAMPING,
                                         NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "h": Gate(
-                name="H (Hadamard)",
+                short_name="H",
+                long_name="H (Hadamard)",
                 description="Creates superposition states",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING, NoiseParameterType.AMPLITUDE_DAMPING,
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.PHASE_DAMPING,
+                                        NoiseParameterType.AMPLITUDE_DAMPING,
                                         NoiseParameterType.DEPOLARIZING, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "s": Gate(
-                name="S (Phase)",
+                short_name="S",
+                long_name="S (Phase)",
                 description="π/2 phase shift",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "sdg": Gate(
-                name="S-dagger",
+                short_name="SDG",
+                long_name="S-dagger",
                 description="Inverse of Phase gate",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "t": Gate(
-                name="T (π/4)",
+                short_name="T",
+                long_name="T (π/4)",
                 description="π/4 phase shift",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "tdg": Gate(
-                name="T-dagger",
+                short_name="TDG",
+                long_name="T-dagger",
                 description="Inverse of T-gate",
-                supported_noise_model=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "rx": Gate(
-                name="RX",
+                short_name="RX",
+                long_name="RX",
                 description="Rotation around X-axis by θ radians",
-                supported_noise_model=[NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.BIT_FLIP],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.DEPOLARIZING,
+                                        NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "ry": Gate(
-                name="RY",
+                short_name="RY",
+                long_name="RY",
                 description="Rotation around Y-axis by θ radians",
-                supported_noise_model=[NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.BIT_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.DEPOLARIZING,
+                                        NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "rz": Gate(
-                name="RZ",
+                short_name="RZ",
+                long_name="RZ",
                 description="Rotation around Z-axis by θ radians",
-                supported_noise_model=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP, NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.DEPOLARIZING,
+                                        NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "cx": Gate(
-                name="CX (CNOT)",
+                short_name="CNOT",
+                long_name="CX (CNOT)",
                 description="Entangles two qubits (Controlled-NOT)",
-                supported_noise_model=[NoiseParameterType.DEPOLARIZING],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING],
                 num_qubits=2
             ),
             "cz": Gate(
-                name="CZ (Controlled-Z)",
+                short_name="CZ",
+                long_name="CZ (Controlled-Z)",
                 description="Controlled-Z gate",
-                supported_noise_model=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.PHASE_FLIP],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.PHASE_FLIP],
                 num_qubits=2
             ),
             "swap": Gate(
-                name="SWAP",
+                short_name="SWAP",
+                long_name="SWAP",
                 description="Swaps the states of two qubits",
-                supported_noise_model=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP],
                 num_qubits=2
             ),
             "ccx": Gate(
-                name="CCX (Toffoli)",
+                short_name="CCX",
+                long_name="CCX (Toffoli)",
                 description="Three-qubit controlled-controlled-NOT",
-                supported_noise_model=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP],
                 num_qubits=3
             ),
+            "ccz": Gate(
+                short_name="CCZ",
+                long_name="CCZ",
+                description="Three-qubit controlled-controlled-Z",
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP],
+                num_qubits=3
+            ),
+            "u": Gate(
+                short_name="U",
+                long_name="Unitary",
+                description="Unitary gate",
+                supported_noise_params=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                num_qubits=1
+            ),
             "u1": Gate(
-                name="U1",
+                short_name="U1",
+                long_name="U1",
                 description="Phase gate (equivalent to RZ)",
-                supported_noise_model=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "u2": Gate(
-                name="U2",
+                short_name="U2",
+                long_name="U2",
                 description="General single-qubit gate (π rotation)",
-                supported_noise_model=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "u3": Gate(
-                name="U3",
+                short_name="U3",
+                long_name="U3",
                 description="General single-qubit gate (arbitrary rotation)",
-                supported_noise_model=[NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
+                supported_noise_params=[NoiseParameterType.AMPLITUDE_DAMPING, NoiseParameterType.PHASE_FLIP, NoiseParameterType.THERMAL_RELAXATION],
                 num_qubits=1
             ),
             "measure": Gate(
-                name="M (Measurement)",
+                short_name="M",
+                long_name="M (Measurement)",
                 description="Reads the qubit state into classical memory",
-                supported_noise_model=[NoiseParameterType.READOUT_ERROR],
+                supported_noise_params=[NoiseParameterType.BIT_FLIP],
                 num_qubits=1
+            ),
+            "barrier": Gate(
+                short_name="B",
+                long_name="Barrier",
+                description="Prevents simplification and optimization across the barrier",
+                supported_noise_params=[],
+                num_qubits=-1
             )
         }
 
-    def used_gates(self):
+    def used_operations(self):
         # If there's no circuit, return an empty list
         if not self.circuit:
             return []
 
         # Define the blacklist of gates to exclude
-        blacklist = ['barrier', 'save_statevector']
+        blacklist = ['save_statevector']
 
         # Extract all gate names, excluding those in the blacklist
         used_gates = [
             op[0].name for op in self.circuit.data if op[0].name not in blacklist
         ]
 
-        # Remove duplicates and return the list
-        return list(set(used_gates))
+        return used_gates

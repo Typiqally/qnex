@@ -16,11 +16,11 @@ class BaseSimulator(ABC):
         pass
 
     @abstractmethod
-    def supported_gates(self) -> list[Gate]:
+    def supported_operations(self) -> list[Gate]:
         """Return a list of supported gates."""
         pass
 
     @abstractmethod
-    def used_gates(self):
+    def used_operations(self):
         """Return a list of used gates in the current circuit."""
         pass

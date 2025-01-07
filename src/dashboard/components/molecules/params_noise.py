@@ -8,33 +8,52 @@ from src.backend.registry import SIMULATOR_REGISTRY
 from src.backend.types import NoiseParameterType
 
 
-def create_probability_slider(component_id_index: str, label: str, value: int = 0):
+def create_probability_slider(noise_param: NoiseParameterType, value: int = 0):
     return dmc.Grid(
         [
-            dmc.GridCol(dmc.Text(label, size="sm"), span=4),
             dmc.GridCol(
-                dmc.Slider(
-                    id={"type": "noise-param", "index": component_id_index},
-                    value=value,
-                    marks=[
-                        {"value": 0, "label": "0%"},
-                        {"value": 50, "label": "50%"},
-                        {"value": 100, "label": "100%"},
+                dmc.Tooltip(
+                    [
+                        dmc.Text(noise_param.display_name, size="sm"),
                     ],
-                    w="100%"
+                    label=noise_param.description,
+                    position="right",
+                    multiline=True,
+                    color="gray",
+                    offset=3
+                ),
+                span=4
+            ),
+            dmc.GridCol(
+                dmc.NumberInput(
+                    id={"type": "noise-param", "index": noise_param.value},
+                    value=value,
+                    min=0,
+                    max=100,
+                    rightSection="%",
                 ),
                 span="auto"
-            )
-        ]
+            ),
+        ],
+        gutter="md"
     )
 
 
-def create_switch(component_id_index: str, label: str, value: bool = False):
+def create_switch(noise_param: NoiseParameterType, value: bool = False):
     return dmc.Flex(
         [
-            dmc.Text(label, size="sm"),
+            dmc.Tooltip(
+                [
+                    dmc.Text(noise_param.display_name, size="sm")
+                ],
+                label=noise_param.description,
+                position="right",
+                multiline=True,
+                color="gray",
+                offset=3
+            ),
             dmc.Switch(
-                id={"type": "noise-param", "index": component_id_index},
+                id={"type": "noise-param", "index": noise_param.value},
                 checked=value
             ),
         ],
@@ -43,33 +62,32 @@ def create_switch(component_id_index: str, label: str, value: bool = False):
 
 
 # TODO: This is so ugly, should find a nicer way for this
-noise_model_COMPONENT_MAP = {
+NOISE_PARAM_COMPONENT_MAP = {
     NoiseParameterType.DEPOLARIZING: lambda noise_model: create_probability_slider(
-        "depolarizing",
-        "Depolarizing Probability",
+        NoiseParameterType.DEPOLARIZING,
         noise_model.get("depolarizing", 0)
     ),
     NoiseParameterType.AMPLITUDE_DAMPING: lambda noise_model: create_probability_slider(
-        "amplitude-damping",
-        "Amplitude Damping",
-        noise_model.get("amplitude-damping", 0)
+        NoiseParameterType.AMPLITUDE_DAMPING,
+        noise_model.get("amplitude_damping", 0)
     ),
     NoiseParameterType.PHASE_DAMPING: lambda noise_model: create_probability_slider(
-        "phase-damping",
-        "Phase Damping",
-        noise_model.get("phase-damping", 0)
+        NoiseParameterType.PHASE_DAMPING,
+        noise_model.get("phase_damping", 0)
     ),
     NoiseParameterType.READOUT_ERROR: lambda noise_model: create_probability_slider(
-        "readout-error",
-        "Readout Error Probability",
-        noise_model.get("readout-error", 0)
+        NoiseParameterType.READOUT_ERROR,
+        noise_model.get("readout_error", 0)
     ),
-    NoiseParameterType.BIT_FLIP: lambda noise_model: create_probability_slider("bit-flip", "Bit Flip Probability", noise_model.get("bit-flip", 0)),
-    NoiseParameterType.PHASE_FLIP: lambda noise_model: create_probability_slider("phase-flip", "Phase Flip Probability", noise_model.get("phase-flip", 0)),
+    NoiseParameterType.BIT_FLIP: lambda noise_model: create_probability_slider(
+        NoiseParameterType.BIT_FLIP,
+        noise_model.get("bit_flip", 0)
+    ),
+    NoiseParameterType.PHASE_FLIP: lambda noise_model: create_probability_slider(
+        NoiseParameterType.PHASE_FLIP, noise_model.get("phase_flip", 0)),
     NoiseParameterType.THERMAL_RELAXATION: lambda noise_model: create_switch(
-        "thermal-relaxation",
-        "Thermal Relaxation",
-        noise_model.get("thermal-relaxation", False)
+        NoiseParameterType.THERMAL_RELAXATION,
+        noise_model.get("thermal_relaxation", False)
     )
 }
 
@@ -139,18 +157,18 @@ def create_params_noise(app):
             # Return an empty array if simulator does not existF
             return []
 
-        gates = simulator.supported_gates()
+        gates = simulator.supported_operations()
         gate_info = gates[gate_ref]
 
         gate_noise_model_components = [
-            noise_model_COMPONENT_MAP[noise_model](current_noise_model.get(gate_ref, {}))
-            for noise_model in gate_info.noise_models
+            NOISE_PARAM_COMPONENT_MAP[noise_param](current_noise_model.get(gate_ref, {}))
+            for noise_param in gate_info.supported_noise_params
         ]
 
         other_components = [
             dmc.Alert(id="noise-gate-description", color="blue", children=gate_info.description),
             dmc.NumberInput(
-                id={"type": "noise-param", "index": "gate-time"},
+                id={"type": "noise-param", "index": "gate_time"},
                 label="Gate time",
                 description="Execution time in microseconds",
                 value=current_noise_model.get("gate-time", 50),
@@ -236,7 +254,7 @@ def create_params_noise(app):
         dmc.Select(
             label="Gate",
             placeholder="Select a gate",
-            description="Select a gate to configure its noise parameters",
+            description="Select a gate to configure its noise parameters, only used gates are shown",
             id="select-gate",
             data=[]
         ),
