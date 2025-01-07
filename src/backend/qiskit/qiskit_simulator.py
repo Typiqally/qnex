@@ -87,7 +87,7 @@ class QiskitSimulator(BaseSimulator):
 
     def _create_noise_error(self, noise_type: NoiseParameterType, prob: float, num_qubits: int):
         """Helper method to create the correct error for a given noise type and probability."""
-        normalized_prob = max(min(round(prob, 2), 1), 0)
+        normalized_prob = max(min(prob, 1), 0)
 
         if noise_type == NoiseParameterType.BIT_FLIP:
             return pauli_error([('X', normalized_prob), ('I', 1 - normalized_prob)])
