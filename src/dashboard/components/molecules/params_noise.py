@@ -140,11 +140,16 @@ def create_params_noise(app):
             return [], "QASM could not be interpreted, please validate for issues."
 
         # Get the gates from the simulator
-        supported_gates = simulator.supported_gates()
-        used_gates = simulator.used_gates()
+        supported_gates = simulator.supported_operations()
+        used_operations = set(simulator.used_operations())
 
-        # Return the gates as a list of dicts with "value" and "label" keys
-        return [{"value": gate_ref, "label": supported_gates[gate_ref].display_name} for gate_ref in used_gates]
+        # Filter and map used gates to supported ones
+        filtered_gates = [
+            {"label": supported_gates[gate_ref].long_name, "value": gate_ref}
+            for gate_ref in used_operations if gate_ref in supported_gates and gate_ref != "barrier"
+        ]
+
+        return filtered_gates, None
 
     @app.callback(
         Output('noise-gate-params', 'children'),
@@ -233,7 +238,18 @@ def create_params_noise(app):
     return dmc.Stack([
         dcc.Store(id='noise-model'),
         dcc.Download(id="download-noise-model-export"),
-        dmc.Title("Noise model", order=4),
+        dmc.Title("Noise", order=4),
+        dmc.Select(
+            label="Noise model",
+            placeholder="Select a model",
+            description="Select a pre-defined model, or choose custom to create your own",
+            id="select-noise-model",
+            value="custom",
+            data=[
+                {"label": "Custom", "value": "custom"},
+            ]
+        ),
+        dmc.Divider(label="Model editor", variant="dashed"),
         dmc.Group(
             [
                 dcc.Upload(
@@ -253,7 +269,6 @@ def create_params_noise(app):
             ],
             grow=True
         ),
-        dmc.Divider(label="Model editor", variant="dashed"),
         dmc.Select(
             label="Gate",
             placeholder="Select a gate",
