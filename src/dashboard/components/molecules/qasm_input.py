@@ -17,9 +17,10 @@ def create_qasm_input(app):
         dcc.Store(id='qasm'),
         dmc.Textarea(
             id='input-qasm',
-            label="Enter valid script",
+            label="OpenQASM code",
             autosize=True,
             minRows=20,
+            maxRows=40,
             value=default_qasm_circuit
         )
     ])
