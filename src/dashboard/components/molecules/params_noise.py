@@ -154,7 +154,7 @@ def create_params_noise(app):
     @app.callback(
         Output('noise-gate-params', 'children'),
         Input('select-gate', 'value'),
-        Input('select-simulator', 'value'),
+        Input('select-simulator-backend', 'value'),
         State("noise-model", 'data'),
     )
     def update_gate_noise_model_children(gate_ref, simulator_ref, current_noise_model):

@@ -8,7 +8,7 @@ def create_params_simulation():
         dmc.Select(
             label="Backend",
             placeholder="Select one",
-            id="select-simulator",
+            id="select-simulator-backend",
             value="qiskit",
             required=True,
             data=[
