@@ -170,9 +170,9 @@ def create_params_noise(app):
             dmc.NumberInput(
                 id={"type": "noise-param", "index": "gate_time"},
                 label="Gate time",
-                description="Execution time in microseconds",
-                value=current_noise_model.get("gate-time", 50),
-                rightSection="µs"
+                description="Execution time in nanoseconds",
+                value=current_noise_model.get("gate_time", 50),
+                rightSection="ns"
             ),
             dmc.Grid(
                 [
@@ -181,7 +181,7 @@ def create_params_noise(app):
                             id={"type": "noise-param", "index": "t1"},
                             label="Relaxation Time (T1)",
                             value=current_noise_model.get("t1", 30),
-                            rightSection="µs"),
+                            rightSection="ns"),
                         span=6
                     ),
                     dmc.GridCol(
@@ -189,7 +189,7 @@ def create_params_noise(app):
                             id={"type": "noise-param", "index": "t2"},
                             label="Dephasing Time (T2)",
                             value=current_noise_model.get("t2", 20),
-                            rightSection="µs"
+                            rightSection="ns"
                         ),
                         span=6)
                 ]
