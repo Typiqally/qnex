@@ -13,8 +13,9 @@ def create_params_simulation():
             required=True,
             data=[
                 {"value": "qiskit", "label": "IBM Qiskit"},
-                {"value": "cirq", "label": "Google Cirq"},
-                {"value": "quantumsim", "label": "QuantumSim"},
+                # TODO: Support more backends
+                # {"value": "cirq", "label": "Google Cirq"},
+                # {"value": "quantumsim", "label": "QuantumSim"},
             ]
         ),
     ])
