@@ -24,7 +24,7 @@ server = app.server
 app.css.config.serve_locally = True
 
 app.layout = dmc.MantineProvider(
-    forceColorScheme="dark",
+    # forceColorScheme="dark",
     theme={
         "primaryColor": "blue",
         "fontFamily": "'Inter', sans-serif",

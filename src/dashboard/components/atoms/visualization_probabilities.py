@@ -2,6 +2,7 @@ import dash_mantine_components as dmc
 import numpy as np
 from dash import Input, Output, dcc
 import plotly.graph_objects as go
+from plotly.graph_objs.bar.marker import Pattern
 
 from src.backend.qiskit.qiskit_utils import deserialize_statevector
 
@@ -12,38 +13,37 @@ def create_visualization_probabilities(app):
 
     # Layout for the chart
     fig.update_layout(
-        xaxis_title="Computational basis states",
-        yaxis_title="Probability (%)",
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
         xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
         ),
         yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
-            range=[0, 100]
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
+            range=[0, 100],
         ),
+        xaxis_title="Computational basis states",
+        yaxis_title="Probability (%)",
         barmode='group',  # Group bars together
         height=384,  # Set chart height
-        plot_bgcolor='#1e1e1e',  # Dark background
-        paper_bgcolor='#1e1e1e',  # Dark paper background,
-        font_color='#ffffff',
-        transition={'duration': 400, 'easing': "cubic-in-out"},
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        margin={'t': 50, 'b': 24, 'l': 36, 'r': 36},
     )
 
     # Add Ideal series (blue bars)
     fig.add_trace(go.Bar(
         name='Ideal',
-        marker_color='blue'
+        marker=dict(color='blue')
     ))
 
     # Add Noisy series (red bars)
     fig.add_trace(go.Bar(
         name='Noisy',
-        marker_color='red'
+        marker=dict(color='red', pattern=Pattern(shape='/')),
     ))
 
     @app.callback(
@@ -73,6 +73,11 @@ def create_visualization_probabilities(app):
         # Generate binary combinations for results
         basis_states = [format(i, f'0{num_qubits}b') for i in range(num_results)]
 
+        fig.update_layout(
+            title=f"Probabilities for shot #{selected_shot}<br>"
+                  f"<sup>Measurement probabilities for each quantum basis state.</sup>"
+        )
+
         fig.update_traces(
             selector=dict(name="Ideal"),
             x=basis_states,
@@ -86,9 +91,4 @@ def create_visualization_probabilities(app):
 
         return fig
 
-    return dmc.Stack(
-        [
-            dmc.Title('Probabilities', order=4),
-            dcc.Graph(id='visualization-probabilities', figure=fig),
-        ]
-    )
+    return dcc.Graph(id='visualization-probabilities', figure=fig)

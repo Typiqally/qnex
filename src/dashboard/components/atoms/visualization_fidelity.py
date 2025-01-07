@@ -23,11 +23,12 @@ def create_visualization_fidelity(app):
             z=[],  # Initial empty data
             colorscale='rdbu',
             colorbar=dict(
-                title='Mean Difference',
+                title='Mean Fidelity',
                 tickvals=[0, 0.5, 1],
                 ticktext=['0', '0.5', '1'],
                 tickmode='array',
                 orientation='h',
+                thickness=10,
             ),
             zmin=0,
             zmax=1
@@ -36,22 +37,22 @@ def create_visualization_fidelity(app):
 
     # Update layout with titles and labels
     fig.update_layout(
-        plot_bgcolor='#1e1e1e',  # Dark background
-        paper_bgcolor='#1e1e1e',  # Dark paper background
-        font_color='#ffffff',
-        transition={'duration': 400, 'easing': "cubic-in-out"},
-        height=164,
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
         xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
         ),
         yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
         ),
+        margin={'t': 100, 'b': 24, 'l': 36, 'r': 36},
+        height=140,
+        title="Quantum State Fidelity<br><sup>Measures similarity between ideal and noisy quantum states</sup>",
     )
 
     @app.callback(
@@ -70,24 +71,20 @@ def create_visualization_fidelity(app):
             for sv_name in sv_keys
         ]
 
-
-
         # Reshape the mean differences for a row-based heatmap (1xN)
         mean_differences = np.array(mean_differences).reshape(1, -1)
 
         # Update the figure trace with new data
-        fig.update_traces(z=mean_differences )
-
+        fig.update_traces(z=mean_differences)
         fig.update_layout(
-            xaxis={'tickmode': 'array', 'tickvals': np.arange(len(mean_differences[0])), 'ticktext': sv_keys},
+            xaxis={
+                'tickmode': 'array',
+                'tickvals': np.arange(len(mean_differences[0])),
+                'ticktext': tick_text
+            },
             yaxis={'tickvals': []},
         )
 
         return fig
 
-    return dmc.Stack(
-        [
-            dmc.Title('Fidelity', order=4),
-            dcc.Graph(id='visualization-fidelity', figure=fig),
-        ]
-    )
+    return dcc.Graph(id='visualization-fidelity', figure=fig)

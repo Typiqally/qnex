@@ -10,21 +10,24 @@ from qiskit.visualization import circuit_drawer
 def create_visualization_circuit_diagram(app):
     fig = go.Figure()
     fig.update_layout(
-        paper_bgcolor="#1e1e1e",  # Set background color
-        plot_bgcolor="#1e1e1e",  # Set plot area background color
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
         xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
             range=[0, 1],
-            tickfont_color="#fff",
         ),
         yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
             range=[-1, 0],
-            tickfont_color="#fff",
         ),
+        margin={'t': 50, 'b': 24, 'l': 36, 'r': 36},
+        height=350,
+        title="Circuit Diagram",
         dragmode='pan'  # Set the default interaction mode to pan
     )
 
@@ -44,8 +47,7 @@ def create_visualization_circuit_diagram(app):
 
             # Draw the circuit with customized style
             circuit_fig = circuit_drawer(circuit, output='mpl', style={
-                'name': 'iqp-dark',
-                'backgroundcolor': '#1e1e1e'  # Set the background color
+                'backgroundcolor': '#00000000',
             })
 
             # Remove padding by adjusting the figure layout

@@ -4,6 +4,7 @@ import dash_mantine_components as dmc
 import numpy as np
 from dash import Input, Output, dcc
 import plotly.graph_objects as go
+from plotly.graph_objs.bar.marker import Pattern
 
 from src.backend.qiskit.qiskit_utils import deserialize_statevector
 
@@ -11,35 +12,37 @@ from src.backend.qiskit.qiskit_utils import deserialize_statevector
 def create_visualization_shots(app):
     fig = go.Figure()
     fig.update_layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
+        xaxis=dict(
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
+        ),
+        yaxis=dict(
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
+        ),
         xaxis_title="Computational basis states",
         yaxis_title="Counts",
         barmode='group',  # Group bars together
+        title="Counts<br><sup>Measurement counts for each quantum basis state from circuit execution.</sup>",
         height=384,  # Set chart height
-        plot_bgcolor='#1e1e1e',  # Dark background
-        paper_bgcolor='#1e1e1e',  # Dark paper background,
-        font_color='#ffffff',
-        transition={'duration': 400, 'easing': "cubic-in-out"},
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
-        xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
-        ),
-        yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
-        ),
+        margin={'t': 50, 'b': 24, 'l': 36, 'r': 36},
     )
 
+    # Add Ideal series (blue bars)
     fig.add_trace(go.Bar(
         name='Ideal',
-        marker_color='blue'
+        marker=dict(color='blue')
     ))
 
+    # Add Noisy series (red bars)
     fig.add_trace(go.Bar(
         name='Noisy',
-        marker_color='red'
+        marker=dict(color='red', pattern=Pattern(shape='/')),
     ))
 
     @app.callback(
@@ -85,9 +88,4 @@ def create_visualization_shots(app):
 
         return fig
 
-    return dmc.Stack(
-        [
-            dmc.Title('Shots', order=4),
-            dcc.Graph(id='visualization-shots', figure=fig),
-        ]
-    )
+    return dcc.Graph(id='visualization-shots', figure=fig)

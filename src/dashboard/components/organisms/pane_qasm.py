@@ -11,7 +11,6 @@ def create_pane_qasm(app):
             create_qasm_input(app),
             dmc.Divider(variant="solid"),
         ]),
-        style={"border-right": default_border},
         pt="sm",
         w="30rem",
     )

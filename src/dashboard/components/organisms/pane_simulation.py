@@ -18,7 +18,6 @@ def create_pane_params(app):
             dmc.Divider(variant="solid"),
             create_params_execution(app)
         ]),
-        style={"border-left": default_border},
         pt="sm",
         w="30rem",
     )

@@ -36,14 +36,14 @@ def create_visualizations(app):
 
     return dmc.Stack(
         [
+            dmc.Title("Visualization", order=4),
             dmc.Stack(
                 [
-                    dmc.Title("Quantum Circuit", order=4),
+                    create_visualization_fidelity(app),
                     create_visualization_circuit_diagram(app),
                 ],
-                p="sm"
+                gap="0"
             ),
-            dmc.Divider(variant="solid", my="none"),
             dmc.Stack([
                 dmc.Flex(
                     [
@@ -78,20 +78,14 @@ def create_visualizations(app):
                         dmc.GridCol(
                             create_visualization_probabilities(app),
                             span=6
-                        ),
-                        dmc.GridCol(
-                            create_visualization_qsphere(app),
-                            span=6
-                        ),
-                        dmc.GridCol(
-                            create_visualization_fidelity(app),
-                            span=6
                         )
                     ],
                     gutter='md'
                 )
-            ], p="sm")
+            ])
         ],
         h="100%",
-        w="100%"
+        w="100%",
+        p="sm",
+        style={'background-color': 'rgb(250,250,250)'},
     )
