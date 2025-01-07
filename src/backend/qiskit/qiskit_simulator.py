@@ -14,17 +14,16 @@ class QiskitSimulator(BaseSimulator):
         self.simulator = AerSimulator()
 
     def load_circuit(self, qasm_str: str):
+        # Check the QASM version in the input string
+        if "OPENQASM 3.0;" in qasm_str:
+            # Parse the QASM string as qasm3
+            circuit = qasm3.loads(qasm_str)
+        else:
+            # Parse the QASM string as qasm2 (default or assumed version)
+            circuit = qasm2.loads(qasm_str)
 
-        try:
-            # Check the QASM version in the input string
-            if "OPENQASM 3.0;" in qasm_str:
-                # Parse the QASM string as qasm2
-                self.circuit = insert_save_statevectors(qasm3.loads(qasm_str))
-            else:
-                # Parse the QASM string as qasm3 (default or assumed version)
-                self.circuit = insert_save_statevectors(qasm2.loads(qasm_str))
-        except Exception as e:
-            pass
+        # Insert save statevectors into the circuit
+        self.circuit = insert_save_statevectors(circuit)
 
     def create_noise_model(self, noise_model: dict) -> NoiseModel:
         model = NoiseModel()

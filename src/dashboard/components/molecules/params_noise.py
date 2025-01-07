@@ -100,7 +100,8 @@ def create_params_noise(app):
 
     @app.callback(
         Output('select-gate', 'data'),
-        Input('select-simulator', 'value'),
+        Output('input-qasm', 'error'),
+        Input('select-simulator-backend', 'value'),
         Input("input-qasm", "value"),
     )
     def update_select_gate_data(simulator_ref, qasm_str):
@@ -112,7 +113,10 @@ def create_params_noise(app):
             return []
 
         # Load the current circuit
-        simulator.load_circuit(qasm_str)
+        try:
+            simulator.load_circuit(qasm_str)
+        except Exception as e:
+            return [], "QASM could not be interpreted, please validate for issues."
 
         # Get the gates from the simulator
         supported_gates = simulator.supported_gates()
