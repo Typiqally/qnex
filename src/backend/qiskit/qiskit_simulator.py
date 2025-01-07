@@ -39,15 +39,16 @@ class QiskitSimulator(BaseSimulator):
 
             print(f"Applying noise to gate: {gate}, {noise_model_gate}")
 
-            if gate_ref == "measure":
-                # Handle readout error separately for the "measure" gate
-                readout_error_prob = noise_model_gate.get('readout-error', 0) / 100
-                readout_error = ReadoutError([
-                    [1 - readout_error_prob, readout_error_prob],
-                    [readout_error_prob, 1 - readout_error_prob],
-                ])
-                model.add_all_qubit_readout_error(readout_error)
-                continue
+            # TODO: Not functioning correctly, using bit flip for now
+            # if gate_ref == "measure":
+            #     # Handle readout error separately for the "measure" gate
+            #     readout_error_prob = noise_model_gate.get(NoiseParameterType.READOUT_ERROR.value, 0) / 100
+            #     readout_error = ReadoutError([
+            #         [1 - readout_error_prob, readout_error_prob],
+            #         [readout_error_prob, 1 - readout_error_prob],
+            #     ])
+            #
+            #     model.add_all_qubit_readout_error(readout_error)
 
             gate_time = noise_model_gate.get('gate_time', 0)
             t1 = noise_model_gate.get('t1', 30)  # Default T1 if not provided
