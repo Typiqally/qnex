@@ -14,15 +14,11 @@ def deserialize_statevector(state):
 
 
 def insert_save_statevectors(circuit: QuantumCircuit, prefix='sv') -> QuantumCircuit:
-    dag = circuit_to_dag(circuit)
-    dag_draft = dag.copy_empty_like()
+    debug_circuit = circuit.copy_empty_like()
+    debug_circuit.save_statevector(f"{prefix}_{0}", pershot=True)
 
-    for index, layer in enumerate(dag.layers()):
-        circuit = dag_to_circuit(layer["graph"])
-        circuit.save_statevector(f"{prefix}_{index}", pershot=True)
+    for index, instruction in enumerate(circuit.data):
+        debug_circuit.append(instruction)
+        debug_circuit.save_statevector(f"{prefix}_{index + 1}", pershot=True)
 
-        layer["graph"] = circuit_to_dag(circuit)
-
-        dag_draft.compose(layer["graph"])
-
-    return dag_to_circuit(dag_draft)
+    return debug_circuit
