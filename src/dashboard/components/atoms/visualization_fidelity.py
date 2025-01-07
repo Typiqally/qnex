@@ -1,8 +1,8 @@
-import dash_mantine_components as dmc
 import numpy as np
-from dash import Input, Output, dcc
 import plotly.graph_objects as go
+from dash import Input, Output, dcc
 
+from src.backend.registry import SIMULATOR_REGISTRY
 from src.utils.complex_utils import deserialize_complex_array
 
 
@@ -57,13 +57,28 @@ def create_visualization_fidelity(app):
 
     @app.callback(
         Output('visualization-fidelity', 'figure'),
+        Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
-        Input('select-state-vector', 'value'),
         prevent_initial_call=True
     )
-    def update_data(simulation_results, state_vector):
+    def update_data(simulator_ref, simulation_results):
+        # Check if the simulator exists in the SIMULATOR_REGISTRY
+        simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
+
+        if not simulator:
+            # Return an empty array if simulator does not exist
+            return fig
+
         # Extract state vector keys and compute mean fidelity differences
         sv_keys = [key for key in simulation_results['ideal'] if key.startswith('sv')]
+
+        supported_ops = simulator.supported_operations()
+        used_ops = ["init"] + simulator.used_operations()
+
+        tick_text = [
+            'Init' if op == 'init' else (supported_ops[op].short_name if op in supported_ops else f"Unknown op ({op})")
+            for i, (op, sv) in enumerate(zip(used_ops, sv_keys))
+        ]
 
         mean_differences = [
             np.mean([compute_fidelity(deserialize_complex_array(sv_ideal), deserialize_complex_array(sv_noisy)) for sv_ideal, sv_noisy in

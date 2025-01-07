@@ -1,6 +1,7 @@
 import dash_mantine_components as dmc
 from dash import Output, Input
 
+from src.backend.registry import SIMULATOR_REGISTRY
 from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
 from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
 from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
@@ -11,14 +12,45 @@ from src.dashboard.components.atoms.visualization_qsphere import create_visualiz
 def create_visualizations(app):
     @app.callback(
         Output('select-state-vector', 'data'),
+        Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
         prevent_initial_call=True
     )
-    def update_state_vector_select(simulator_results):
+    def update_state_vector_select_data(simulator_ref, simulator_results):
+        # Check if the simulator exists in the SIMULATOR_REGISTRY
+        simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
+
+        if not simulator:
+            # Return an empty array if simulator does not exist
+            return []
+
+        supported_ops = simulator.supported_operations()
+        used_ops = ["init"] + simulator.used_operations()
+
         simulator_results_ideal = simulator_results['ideal']
         sv_keys = [key for key in simulator_results_ideal.keys() if key.startswith('sv')]
 
-        return sv_keys
+        return [
+            {
+                "label": f"{i + 1}: {supported_ops[op].long_name if op != 'init' and op in supported_ops else ('Initialization Step' if op == 'init' else f'Unknown op ({op})')}",
+                "value": sv}
+            for i, (op, sv) in enumerate(zip(used_ops, sv_keys))
+        ]
+
+    @app.callback(
+        Output('select-state-vector', 'value'),
+        Input('select-state-vector', 'value'),
+        Input('simulation-results', 'data'),
+        prevent_initial_call=True
+    )
+    def update_state_vector_select_value(current_state_vector, simulator_results):
+        if current_state_vector is not None:
+            return current_state_vector
+
+        simulator_results_ideal = simulator_results['ideal']
+        sv_keys = [key for key in simulator_results_ideal.keys() if key.startswith('sv')]
+
+        return sv_keys[0]
 
     @app.callback(
         Output('input-visualize-shot', 'max'),

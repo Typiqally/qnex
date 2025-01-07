@@ -53,18 +53,21 @@ def create_visualization_probabilities(app):
         Input('select-state-vector', 'value'),
         prevent_initial_call=True
     )
-    def update_data(simulation_results, selected_shot, state_vector):
-        if state_vector is None:
+    def update_data(simulation_results, selected_shot, current_state_vector):
+        if current_state_vector is None:
             fig.update_traces(selector=dict(name="Ideal"), y=[])
             fig.update_traces(selector=dict(name="Noisy"), y=[])
 
             return fig
 
+        selected_shot_index = selected_shot - 1
+
         # Extract ideal and noisy state vectors
-        state_vectors_ideal = simulation_results['ideal'][state_vector]
-        state_vectors_noisy = simulation_results['noisy'][state_vector]
-        probabilities_ideal = deserialize_statevector(state_vectors_ideal[selected_shot]).probabilities() * 100
-        probabilities_noisy = deserialize_statevector(state_vectors_noisy[selected_shot]).probabilities() * 100
+        state_vectors_ideal = simulation_results['ideal'][current_state_vector]
+        probabilities_ideal = deserialize_statevector(state_vectors_ideal[selected_shot_index]).probabilities() * 100
+
+        state_vectors_noisy = simulation_results['noisy'][current_state_vector]
+        probabilities_noisy = deserialize_statevector(state_vectors_noisy[selected_shot_index]).probabilities() * 100
 
         # Determine the number of qubits
         num_results = len(state_vectors_ideal[0])  # Assuming state_vectors_ideal[0] exists and has correct size
