@@ -136,7 +136,7 @@ def create_params_noise(app):
         # Load the current circuit
         try:
             simulator.load_circuit(qasm_str)
-        except Exception as e:
+        except Exception:
             return [], "QASM could not be interpreted, please validate for issues."
 
         # Get the gates from the simulator
@@ -207,7 +207,7 @@ def create_params_noise(app):
         return other_components + gate_noise_model_components
 
     @app.callback(
-        Output("noise-model", "data", allow_duplicate=True),
+        Output('noise-model', 'data', allow_duplicate=True),
         Input('select-gate', 'value'),
         Input({"type": "noise-param", "index": ALL}, "value"),
         Input({"type": "noise-param", "index": ALL}, "checked"),

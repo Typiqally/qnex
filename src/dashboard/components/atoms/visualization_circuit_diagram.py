@@ -79,7 +79,7 @@ def create_visualization_circuit_diagram(app):
 
             # Return the image as a base64-encoded PNG
             return fig
-        except (qasm3.QASM3ImporterError, qasm2.QASM2ParseError) as e:
+        except (qasm3.QASM3ImporterError, qasm2.QASM2ParseError):
             # Provide fallback image in case of error
             return fig
         except Exception as e:

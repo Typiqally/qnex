@@ -1,4 +1,3 @@
-import dash_mantine_components as dmc
 import numpy as np
 from dash import Input, Output, dcc
 import plotly.graph_objects as go

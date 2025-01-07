@@ -1,5 +1,4 @@
 from qiskit import QuantumCircuit
-from qiskit.converters import dag_to_circuit, circuit_to_dag
 from qiskit.quantum_info import Statevector
 
 from src.utils.complex_utils import serialize_complex_array, deserialize_complex_array

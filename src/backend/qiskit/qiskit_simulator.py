@@ -5,7 +5,6 @@ from natsort import natsorted
 from qiskit import qasm3, qasm2
 from qiskit_aer import AerSimulator
 from qiskit_aer.noise import NoiseModel, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
-from qiskit_ibm_runtime.fake_provider.fake_provider import FakeSantiagoV2
 
 from src.backend.base_simulator import BaseSimulator
 from src.backend.qiskit.qiskit_utils import insert_save_statevectors, serialize_statevector

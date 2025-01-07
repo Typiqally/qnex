@@ -6,7 +6,6 @@ from src.dashboard.components.atoms.visualization_circuit_diagram import create_
 from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
 from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
 from src.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
-from src.dashboard.components.atoms.visualization_qsphere import create_visualization_qsphere
 
 
 def create_visualizations(app):

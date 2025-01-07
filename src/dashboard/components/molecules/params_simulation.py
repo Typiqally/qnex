@@ -1,5 +1,4 @@
 import dash_mantine_components as dmc
-from dash import dcc
 
 
 def create_params_simulation():
