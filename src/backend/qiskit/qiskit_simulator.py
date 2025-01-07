@@ -49,7 +49,7 @@ class QiskitSimulator(BaseSimulator):
                 model.add_all_qubit_readout_error(readout_error)
                 continue
 
-            gate_time = noise_model_gate.get('gate-time', 0)
+            gate_time = noise_model_gate.get('gate_time', 0)
             t1 = noise_model_gate.get('t1', 30)  # Default T1 if not provided
             t2 = noise_model_gate.get('t2', 20)  # Default T2 if not provided
 
