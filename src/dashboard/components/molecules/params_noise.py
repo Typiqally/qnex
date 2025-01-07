@@ -112,7 +112,10 @@ def create_params_noise(app):
             b64_part = contents_encoded.split(',')[1]
             contents_decoded = base64.b64decode(b64_part).decode('utf-8')
 
-            return json.loads(contents_decoded)
+            noise_model = json.loads(contents_decoded)
+            print("Importing noise model", noise_model)
+
+            return noise_model
         except Exception as e:
             raise e
 
