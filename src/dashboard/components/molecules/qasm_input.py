@@ -18,6 +18,7 @@ def create_qasm_input(app):
         dmc.Textarea(
             id='input-qasm',
             label="OpenQASM code",
+            description="OpenQASM (Open Quantum Assembly Language) is a low-level programming language designed for describing quantum circuits.",
             autosize=True,
             minRows=20,
             maxRows=40,
