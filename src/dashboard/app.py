@@ -60,6 +60,7 @@ app.layout = dmc.MantineProvider(
             gap=0,
             h="100%"
         ),
+        id="container-main",
         h="100vh",
         fluid=True
     )

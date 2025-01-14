@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from src.backend.types import Gate
+from src.backend.types import Gate, SimulationResult
 
 
 class BaseSimulator(ABC):
@@ -11,7 +11,7 @@ class BaseSimulator(ABC):
         pass
 
     @abstractmethod
-    def simulate(self, shots: int, seed: Optional[int], noise_model: dict):
+    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_params: dict) -> SimulationResult:
         """Run the simulation with the given noise parameters."""
         pass
 
@@ -21,6 +21,6 @@ class BaseSimulator(ABC):
         pass
 
     @abstractmethod
-    def used_operations(self):
+    def used_operations(self, qasm_str: str) -> list[Gate]:
         """Return a list of used gates in the current circuit."""
         pass

@@ -1,19 +1,9 @@
 import numpy as np
 import plotly.graph_objects as go
-from dash import Input, Output, dcc
+from dash import Input, Output, dcc, State
 
 from src.backend.registry import SIMULATOR_REGISTRY
-from src.utils.complex_utils import deserialize_complex_array
-
-
-def compute_fidelity(sv1, sv2):
-    # Ensure both state vectors are normalized
-    sv1 = sv1 / np.linalg.norm(sv1)
-    sv2 = sv2 / np.linalg.norm(sv2)
-
-    # Compute the inner product and then square its magnitude to get fidelity
-    fidelity = np.abs(np.vdot(sv1, sv2)) ** 2
-    return fidelity
+from src.utils.quantum import compute_quantum_fidelity
 
 
 def create_visualization_fidelity(app):
@@ -59,21 +49,21 @@ def create_visualization_fidelity(app):
         Output('visualization-fidelity', 'figure'),
         Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
-        prevent_initial_call=True
+        State('input-qasm', 'value')
     )
-    def update_data(simulator_ref, simulation_results):
+    def update_data(simulator_ref, simulation_results, qasm_str):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
         simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
 
-        if not simulator:
+        if simulator is None or simulation_results is None:
             # Return an empty array if simulator does not exist
             return fig
 
         # Extract state vector keys and compute mean fidelity differences
-        sv_keys = [key for key in simulation_results['ideal'] if key.startswith('sv')]
+        sv_keys = list(simulation_results['ideal'].keys())
 
         supported_ops = simulator.supported_operations()
-        used_ops = ["init"] + simulator.used_operations()
+        used_ops = ["init"] + simulator.used_operations(qasm_str)
 
         tick_text = [
             'Init' if op == 'init' else (supported_ops[op].short_name if op in supported_ops else f"Unknown op ({op})")
@@ -81,20 +71,18 @@ def create_visualization_fidelity(app):
         ]
 
         mean_differences = [
-            np.mean([compute_fidelity(deserialize_complex_array(sv_ideal), deserialize_complex_array(sv_noisy)) for sv_ideal, sv_noisy in
+            np.mean([compute_quantum_fidelity(sv_ideal['state_vector'], sv_noisy['state_vector']) for sv_ideal, sv_noisy in
                      zip(simulation_results['ideal'][sv_name], simulation_results['noisy'][sv_name])])
             for sv_name in sv_keys
         ]
 
-        # Reshape the mean differences for a row-based heatmap (1xN)
         mean_differences = np.array(mean_differences).reshape(1, -1)
 
-        # Update the figure trace with new data
         fig.update_traces(z=mean_differences)
         fig.update_layout(
             xaxis={
                 'tickmode': 'array',
-                'tickvals': np.arange(len(mean_differences[0])),
+                'tickvals': np.arange(len(mean_differences)),
                 'ticktext': tick_text
             },
             yaxis={'tickvals': []},

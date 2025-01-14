@@ -1,20 +1,21 @@
 import random
 from typing import Optional
 
+import numpy as np
 from natsort import natsorted
 from qiskit import qasm3, qasm2
-from qiskit_aer import AerSimulator
+from qiskit_aer import QasmSimulator
 from qiskit_aer.noise import NoiseModel, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
 
 from src.backend.base_simulator import BaseSimulator
-from src.backend.qiskit.qiskit_utils import insert_save_statevectors, serialize_statevector
-from src.backend.types import NoiseParameterType, Gate
+from src.backend.qiskit.qiskit_utils import insert_save_statevectors
+from src.backend.types import NoiseParameterType, Gate, StatevectorResult, SimulationResult
+from src.utils.complex_utils import serialize_complex_array
 
 
 class QiskitSimulator(BaseSimulator):
     def __init__(self):
-        self.circuit = None
-        self.simulator = AerSimulator()
+        self.simulator = QasmSimulator()
 
     def load_circuit(self, qasm_str: str):
         # Check the QASM version in the input string
@@ -26,7 +27,7 @@ class QiskitSimulator(BaseSimulator):
             circuit = qasm2.loads(qasm_str)
 
         # Insert save statevectors into the circuit
-        self.circuit = insert_save_statevectors(circuit)
+        return circuit
 
     def create_noise_model(self, noise_model: dict) -> NoiseModel:
         model = NoiseModel()
@@ -102,26 +103,46 @@ class QiskitSimulator(BaseSimulator):
 
         return None
 
-    def simulate(self, shots: int, seed: Optional[int], noise_model_params: dict):
+    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_params: dict) -> SimulationResult:
+        # Loaded
+        circuit = insert_save_statevectors(self.load_circuit(qasm_str))
+
+        num_qubits = circuit.num_qubits
+        num_outcomes = 2 ** num_qubits
+        basis_states = [format(i, f'0{num_qubits}b') for i in range(num_outcomes)]
+
         # Ensure that seed is the same for both simulator runs
         if seed is None:
-            seed = random.randint(1, 10000)
+            seed = random.randint(1, 99999)
 
-        noise_model = self.create_noise_model(noise_model_params)
-        # noise_model = NoiseModel.from_backend(FakeSantiagoV2())
+        noise_model = self.create_noise_model(noise_params)
 
-        # Apply noise model if provided
-        result_ideal = self.simulator.run(self.circuit, shots=shots, memory=True, seed_simulator=seed).result()
-        result_noisy = self.simulator.run(self.circuit, shots=shots, memory=True, seed_simulator=seed, noise_model=noise_model).result()
+        print(f"Executing simulation with seed {seed} and noise model", noise_model)
 
-        # TODO: Move utility function
-        def process_results(results):
-            return {
-                name: [serialize_statevector(sv) for sv in value] if name.startswith('sv') else value
-                for name, value in natsorted(results.data(0).items())
-            }
+        result_ideal = self.simulator.run(circuit, shots=shots, seed_simulator=seed).result()
+        result_noisy = self.simulator.run(circuit, shots=shots, seed_simulator=seed, noise_model=noise_model).result()
 
-        return process_results(result_ideal), process_results(result_noisy)
+        result_ideal_svs = {name: data for name, data in natsorted(result_ideal.data(0).items()) if name.startswith('sv')}
+        result_noisy_svs = {name: data for name, data in natsorted(result_noisy.data(0).items()) if name.startswith('sv')}
+
+        def process_result(results):
+            processed = {}
+
+            for name, data in results.items():
+                processed[name] = []
+
+                for sv in data:
+                    sv.seed(seed)
+                    sample_counts = sv.sample_counts(shots)
+
+                    counts = np.array([sample_counts.get(key, 0) for key in basis_states])
+                    probabilities = sv.probabilities() * 100
+
+                    processed[name].append(StatevectorResult(serialize_complex_array(sv.data), counts, probabilities))
+
+            return processed
+
+        return SimulationResult(basis_states, process_result(result_ideal_svs), process_result(result_noisy_svs))
 
     def supported_operations(self):
         return {
@@ -299,17 +320,15 @@ class QiskitSimulator(BaseSimulator):
             )
         }
 
-    def used_operations(self):
-        # If there's no circuit, return an empty list
-        if not self.circuit:
-            return []
+    def used_operations(self, qasm_str: str):
+        circuit = self.load_circuit(qasm_str)
 
         # Define the blacklist of gates to exclude
         blacklist = ['save_statevector']
 
         # Extract all gate names, excluding those in the blacklist
         used_gates = [
-            op[0].name for op in self.circuit.data if op[0].name not in blacklist
+            op[0].name for op in circuit.data if op[0].name not in blacklist
         ]
 
         return used_gates

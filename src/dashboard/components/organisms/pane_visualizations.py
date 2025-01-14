@@ -1,5 +1,5 @@
 import dash_mantine_components as dmc
-from dash import Output, Input
+from dash import Output, Input, State
 
 from src.backend.registry import SIMULATOR_REGISTRY
 from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
@@ -13,9 +13,10 @@ def create_visualizations(app):
         Output('select-state-vector', 'data'),
         Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
+        State('input-qasm', 'value'),
         prevent_initial_call=True
     )
-    def update_state_vector_select_data(simulator_ref, simulator_results):
+    def update_state_vector_select_data(simulator_ref, simulator_results, qasm_str):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
         simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
 
@@ -24,7 +25,7 @@ def create_visualizations(app):
             return []
 
         supported_ops = simulator.supported_operations()
-        used_ops = ["init"] + simulator.used_operations()
+        used_ops = ["init"] + simulator.used_operations(qasm_str)
 
         simulator_results_ideal = simulator_results['ideal']
         sv_keys = [key for key in simulator_results_ideal.keys() if key.startswith('sv')]
@@ -47,7 +48,7 @@ def create_visualizations(app):
             return current_state_vector
 
         simulator_results_ideal = simulator_results['ideal']
-        sv_keys = [key for key in simulator_results_ideal.keys() if key.startswith('sv')]
+        sv_keys = list(simulator_results_ideal.keys())
 
         return sv_keys[0]
 

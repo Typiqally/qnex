@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import dash_mantine_components as dmc
 from dash import State, Input, Output
 from dash_iconify import DashIconify
@@ -21,7 +23,7 @@ def create_params_execution(app):
         ],
         cancel=[Input("btn-simulation-cancel", "n_clicks")],
     )
-    def display_values(_, simulator_ref, qasm_str, shots, seed, noise_model):
+    def display_values(_, simulator_ref, qasm_str, shots, seed, noise_params):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
         simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
 
@@ -32,17 +34,11 @@ def create_params_execution(app):
         if not seed:
             seed = None
 
-        # Load the current circuit
-        simulator.load_circuit(qasm_str)
-
         # Simulate the circuit with ideal and noisy conditions
-        results_ideal, results_noisy = simulator.simulate(shots or 1, seed, noise_model)
+        result = simulator.simulate(qasm_str, shots or 1, seed, noise_params)
 
         # Return the processed results
-        return {
-            'ideal': results_ideal,
-            'noisy': results_noisy,
-        }
+        return asdict(result)
 
     return dmc.Stack([
         dmc.Title("Execution", order=4),
@@ -75,7 +71,17 @@ def create_params_execution(app):
                     id="btn-simulation-cancel",
                 )
             ],
-            gap="md",
+            gap="xs",
+        ),
+        dmc.Text(
+            [
+                "Or use the ",
+                dmc.Kbd("ctrl"),
+                " + ",
+                dmc.Kbd("r"),
+                " keyboard shortcut to run the simulation"
+            ],
+            size="sm",
+            c="dimmed"
         )
-
     ])

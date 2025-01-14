@@ -103,7 +103,8 @@ def create_params_noise(app):
         return dcc.send_string(json.dumps(noise_model), "noise_model.json")
 
     @app.callback(
-        Output('noise-model', 'data'),
+        Output('noise-model', 'data', allow_duplicate=True),
+        Output('select-gate', 'value', allow_duplicate=True),
         Input('import-noise-model', 'contents'),
         prevent_initial_call=True,
     )
@@ -115,13 +116,21 @@ def create_params_noise(app):
             noise_model = json.loads(contents_decoded)
             print("Importing noise model", noise_model)
 
-            return noise_model
+            return noise_model, None
         except Exception as e:
             raise e
 
     @app.callback(
+        Output('noise-model', 'data'),
+        Output('select-gate', 'value'),
+        Input('btn-noise-model-reset', 'n_clicks'),
+        prevent_initial_call=True,
+    )
+    def reset_noise_model(_):
+        return {}, None
+
+    @app.callback(
         Output('select-gate', 'data'),
-        Output('input-qasm', 'error'),
         Input('select-simulator-backend', 'value'),
         Input("input-qasm", "value"),
     )
@@ -133,15 +142,9 @@ def create_params_noise(app):
             # Return an empty array if simulator does not exist
             return []
 
-        # Load the current circuit
-        try:
-            simulator.load_circuit(qasm_str)
-        except Exception:
-            return [], "QASM could not be interpreted, please validate for issues."
-
         # Get the gates from the simulator
         supported_gates = simulator.supported_operations()
-        used_operations = set(simulator.used_operations())
+        used_operations = set(simulator.used_operations(qasm_str))
 
         # Filter and map used gates to supported ones
         filtered_gates = [
@@ -149,7 +152,7 @@ def create_params_noise(app):
             for gate_ref in used_operations if gate_ref in supported_gates and gate_ref != "barrier"
         ]
 
-        return filtered_gates, None
+        return filtered_gates
 
     @app.callback(
         Output('noise-gate-params', 'children'),
@@ -184,11 +187,12 @@ def create_params_noise(app):
             ),
             dmc.Grid(
                 [
+                    # Taken from https://qcs.rigetti.com/qpus
                     dmc.GridCol(
                         dmc.NumberInput(
                             id={"type": "noise-param", "index": "t1"},
                             label="Relaxation Time (T1)",
-                            value=current_noise_model.get("t1", 30),
+                            value=current_noise_model.get("t1", 19000),
                             rightSection="ns"),
                         span=6
                     ),
@@ -196,7 +200,7 @@ def create_params_noise(app):
                         dmc.NumberInput(
                             id={"type": "noise-param", "index": "t2"},
                             label="Dephasing Time (T2)",
-                            value=current_noise_model.get("t2", 20),
+                            value=current_noise_model.get("t2", 20000),
                             rightSection="ns"
                         ),
                         span=6)
@@ -258,16 +262,25 @@ def create_params_noise(app):
                         dmc.Button(
                             "Import",
                             color="gray",
-                            w="100%"
+                            size="xs",
+                            fullWidth=True,
                         )
                     ],
                 ),
                 dmc.Button(
                     "Export",
-                    id="btn-noise-model-export"
+                    id="btn-noise-model-export",
+                    size="xs",
+                ),
+                dmc.Button(
+                    "Reset",
+                    id="btn-noise-model-reset",
+                    color="red",
+                    size="xs",
                 )
             ],
-            grow=True
+            grow=True,
+            gap="xs"
         ),
         dmc.Select(
             label="Gate",
