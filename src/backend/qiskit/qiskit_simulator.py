@@ -12,6 +12,8 @@ from src.backend.qiskit.qiskit_utils import insert_save_statevectors
 from src.backend.types import NoiseParameterType, Gate, StatevectorResult, SimulationResult
 from src.utils.complex_utils import serialize_complex_array
 
+from qiskit_ibm_runtime.fake_provider import FakeSantiagoV2
+
 
 class QiskitSimulator(BaseSimulator):
     def __init__(self):
@@ -115,7 +117,8 @@ class QiskitSimulator(BaseSimulator):
         if seed is None:
             seed = random.randint(1, 99999)
 
-        noise_model = self.create_noise_model(noise_params)
+        # noise_model = self.create_noise_model(noise_params)
+        noise_model = NoiseModel.from_backend(FakeSantiagoV2())
 
         print(f"Executing simulation with seed {seed} and noise model", noise_model)
 

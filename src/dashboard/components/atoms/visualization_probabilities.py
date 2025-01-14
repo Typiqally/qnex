@@ -57,8 +57,6 @@ def create_visualization_probabilities(app):
 
         selected_shot_index = selected_shot - 1
 
-        print(selected_state_vector)
-
         # Extract ideal and noisy state vectors
         probabilities_ideal = simulation_results['ideal'][selected_state_vector][selected_shot_index]['probabilities']
         probabilities_noisy = simulation_results['noisy'][selected_state_vector][selected_shot_index]['probabilities']
