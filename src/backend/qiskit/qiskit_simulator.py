@@ -145,7 +145,13 @@ class QiskitSimulator(BaseSimulator):
 
             return processed
 
-        return SimulationResult(basis_states, process_result(result_ideal_svs), process_result(result_noisy_svs))
+        return SimulationResult(
+            basis_states,
+            process_result(result_ideal_svs),
+            process_result(result_noisy_svs),
+            result_ideal.get_counts(0),
+            result_noisy.get_counts(0)
+        )
 
     def supported_operations(self):
         return {

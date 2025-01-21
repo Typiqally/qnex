@@ -44,13 +44,15 @@ def create_visualizations(app):
         prevent_initial_call=True
     )
     def update_state_vector_select_value(current_state_vector, simulator_results):
+        print(f"Selected {current_state_vector}")
+
         if current_state_vector is not None:
             return current_state_vector
 
         simulator_results_ideal = simulator_results['ideal']
         sv_keys = list(simulator_results_ideal.keys())
 
-        return sv_keys[0]
+        return sv_keys[-1]
 
     @app.callback(
         Output('input-visualize-shot', 'max'),

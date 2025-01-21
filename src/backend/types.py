@@ -44,3 +44,5 @@ class SimulationResult:
     basis_states: list[str]
     ideal: dict[str, StatevectorResult]
     noisy: dict[str, StatevectorResult]
+    ideal_counts: list[np.ndarray]
+    noisy_counts: list[np.ndarray]

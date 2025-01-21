@@ -55,9 +55,13 @@ def create_visualization_shots(app):
         # Extract ideal and noisy state vectors
         selected_shot_index = selected_shot - 1
 
-        # Extract ideal and noisy state vectors
-        counts_ideal = simulation_results['ideal'][selected_state_vector][selected_shot_index]['counts']
-        counts_noisy = simulation_results['noisy'][selected_state_vector][selected_shot_index]['counts']
+        # TODO: This is currently a bit ugly, need to find better alternative for this
+        if selected_state_vector == list(simulation_results['ideal'].keys())[-1]:
+            counts_ideal = [simulation_results['ideal_counts'].get(state, 0) for state in simulation_results['basis_states']]
+            counts_noisy = [simulation_results['noisy_counts'].get(state, 0) for state in simulation_results['basis_states']]
+        else:
+            counts_ideal = simulation_results['ideal'][selected_state_vector][selected_shot_index]['counts']
+            counts_noisy = simulation_results['noisy'][selected_state_vector][selected_shot_index]['counts']
 
         fig.update_traces(
             selector=dict(name="Ideal"),
