@@ -2,8 +2,8 @@ import numpy as np
 import plotly.graph_objects as go
 from dash import Input, Output, dcc, State
 
-from src.backend.registry import SIMULATOR_REGISTRY
-from src.utils.quantum import compute_quantum_fidelity
+from qnex.backend.registry import SIMULATOR_REGISTRY
+from qnex.utils.quantum import compute_quantum_fidelity
 
 
 def create_visualization_fidelity(app):

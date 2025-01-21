@@ -4,7 +4,7 @@ import dash_mantine_components as dmc
 from dash import State, Input, Output
 from dash_iconify import DashIconify
 
-from src.backend.registry import SIMULATOR_REGISTRY
+from qnex.backend.registry import SIMULATOR_REGISTRY
 
 
 def create_params_execution(app):

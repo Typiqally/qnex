@@ -4,8 +4,8 @@ import json
 import dash_mantine_components as dmc
 from dash import dcc, Output, Input, State, ALL, ctx
 
-from src.backend.registry import SIMULATOR_REGISTRY
-from src.backend.types import NoiseParameterType
+from qnex.backend.registry import SIMULATOR_REGISTRY
+from qnex.backend.types import NoiseParameterType
 
 
 def create_probability_slider(noise_param: NoiseParameterType, value: int = 0):

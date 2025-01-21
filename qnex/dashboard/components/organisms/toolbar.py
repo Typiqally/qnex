@@ -1,6 +1,6 @@
 import dash_mantine_components as dmc
 
-from src.dashboard.styling import default_border
+from qnex.dashboard.styling import default_border
 
 
 def create_toolbar():

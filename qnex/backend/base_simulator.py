@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from src.backend.types import Gate, SimulationResult
+from qnex.backend.types import Gate, SimulationResult
 
 
 class BaseSimulator(ABC):

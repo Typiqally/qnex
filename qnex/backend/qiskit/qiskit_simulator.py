@@ -5,14 +5,12 @@ import numpy as np
 from natsort import natsorted
 from qiskit import qasm3, qasm2
 from qiskit_aer import QasmSimulator
-from qiskit_aer.noise import NoiseModel, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error
+from qiskit_aer.noise import NoiseModel, pauli_error, amplitude_damping_error, phase_damping_error, depolarizing_error, thermal_relaxation_error, ReadoutError
 
-from src.backend.base_simulator import BaseSimulator
-from src.backend.qiskit.qiskit_utils import insert_save_statevectors
-from src.backend.types import NoiseParameterType, Gate, StatevectorResult, SimulationResult
-from src.utils.complex_utils import serialize_complex_array
-
-from qiskit_ibm_runtime.fake_provider import FakeSantiagoV2
+from qnex.backend.base_simulator import BaseSimulator
+from qnex.backend.qiskit.qiskit_utils import insert_save_statevectors
+from qnex.backend.types import NoiseParameterType, Gate, StatevectorResult, SimulationResult
+from qnex.utils.complex_utils import serialize_complex_array
 
 
 class QiskitSimulator(BaseSimulator):
@@ -104,7 +102,7 @@ class QiskitSimulator(BaseSimulator):
 
         return None
 
-    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_params: dict) -> SimulationResult:
+    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_profile_name: str, noise_params: Optional[dict] = None) -> SimulationResult:
         # Loaded
         circuit = insert_save_statevectors(self.load_circuit(qasm_str))
 

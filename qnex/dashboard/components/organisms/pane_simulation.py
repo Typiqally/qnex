@@ -1,9 +1,9 @@
 import dash_mantine_components as dmc
 from dash import dcc
 
-from src.dashboard.components.molecules.params_execution import create_params_execution
-from src.dashboard.components.molecules.params_noise import create_params_noise
-from src.dashboard.components.molecules.params_simulation import create_params_simulation
+from qnex.dashboard.components.molecules.params_execution import create_params_execution
+from qnex.dashboard.components.molecules.params_noise import create_params_noise
+from qnex.dashboard.components.molecules.params_simulation import create_params_simulation
 
 
 def create_pane_simulation(app):

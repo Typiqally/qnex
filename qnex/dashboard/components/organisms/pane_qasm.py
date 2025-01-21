@@ -1,6 +1,6 @@
 import dash_mantine_components as dmc
 
-from src.dashboard.components.molecules.qasm_input import create_qasm_input
+from qnex.dashboard.components.molecules.qasm_input import create_qasm_input
 
 
 def create_pane_qasm(app):

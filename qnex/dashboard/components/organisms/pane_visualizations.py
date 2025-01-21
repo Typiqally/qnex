@@ -1,11 +1,11 @@
 import dash_mantine_components as dmc
 from dash import Output, Input, State
 
-from src.backend.registry import SIMULATOR_REGISTRY
-from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
-from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
-from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
-from src.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
+from qnex.backend.registry import SIMULATOR_REGISTRY
+from qnex.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
+from qnex.dashboard.components.atoms.visualization_counts import create_visualization_shots
+from qnex.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
+from qnex.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
 
 
 def create_visualizations(app):

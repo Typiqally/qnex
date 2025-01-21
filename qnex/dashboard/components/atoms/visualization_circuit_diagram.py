@@ -6,7 +6,7 @@ from dash import Output, Input, dcc
 from qiskit import qasm3, qasm2
 from qiskit.visualization import circuit_drawer
 
-from src.backend.qiskit.qiskit_simulator import QiskitSimulator
+from qnex.backend.qiskit.qiskit_simulator import QiskitSimulator
 
 
 def create_visualization_circuit_diagram(app):

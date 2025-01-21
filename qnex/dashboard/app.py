@@ -3,10 +3,10 @@ import diskcache
 from dash import Dash, _dash_renderer
 from dash.long_callback import DiskcacheLongCallbackManager
 
-from src.dashboard.components.organisms.pane_qasm import create_pane_qasm
-from src.dashboard.components.organisms.pane_visualizations import create_visualizations
-from src.dashboard.components.organisms.pane_simulation import create_pane_simulation
-from src.dashboard.components.organisms.toolbar import create_toolbar
+from qnex.dashboard.components.organisms.pane_qasm import create_pane_qasm
+from qnex.dashboard.components.organisms.pane_visualizations import create_visualizations
+from qnex.dashboard.components.organisms.pane_simulation import create_pane_simulation
+from qnex.dashboard.components.organisms.toolbar import create_toolbar
 
 # Dash Mantine Components is based on REACT 18. You must set the env variable REACT_VERSION=18.2.0 before starting up the app.
 _dash_renderer._set_react_version("18.2.0")
