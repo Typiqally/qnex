@@ -1,13 +1,12 @@
 import dash_mantine_components as dmc
-
 from dash import dcc
+
 from src.dashboard.components.molecules.params_execution import create_params_execution
 from src.dashboard.components.molecules.params_noise import create_params_noise
 from src.dashboard.components.molecules.params_simulation import create_params_simulation
-from src.dashboard.styling import default_border
 
 
-def create_pane_params(app):
+def create_pane_simulation(app):
     return dmc.Container(
         dmc.Stack([
             dcc.Store(id='simulation-results'),
@@ -18,7 +17,6 @@ def create_pane_params(app):
             dmc.Divider(variant="solid"),
             create_params_execution(app)
         ]),
-        style={"border-left": default_border},
         pt="sm",
         w="30rem",
     )

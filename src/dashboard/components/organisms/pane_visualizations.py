@@ -1,24 +1,58 @@
 import dash_mantine_components as dmc
-from dash import Output, Input
+from dash import Output, Input, State
 
-from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualizatioh_circuit_diagram
+from src.backend.registry import SIMULATOR_REGISTRY
+from src.dashboard.components.atoms.visualization_circuit_diagram import create_visualization_circuit_diagram
 from src.dashboard.components.atoms.visualization_counts import create_visualization_shots
 from src.dashboard.components.atoms.visualization_fidelity import create_visualization_fidelity
 from src.dashboard.components.atoms.visualization_probabilities import create_visualization_probabilities
-from src.dashboard.components.atoms.visualization_qsphere import create_visualization_qsphere
 
 
 def create_visualizations(app):
     @app.callback(
         Output('select-state-vector', 'data'),
+        Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
+        State('input-qasm', 'value'),
         prevent_initial_call=True
     )
-    def update_state_vector_select(simulator_results):
+    def update_state_vector_select_data(simulator_ref, simulator_results, qasm_str):
+        # Check if the simulator exists in the SIMULATOR_REGISTRY
+        simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
+
+        if not simulator:
+            # Return an empty array if simulator does not exist
+            return []
+
+        supported_ops = simulator.supported_operations()
+        used_ops = ["init"] + simulator.used_operations(qasm_str)
+
         simulator_results_ideal = simulator_results['ideal']
         sv_keys = [key for key in simulator_results_ideal.keys() if key.startswith('sv')]
 
-        return sv_keys
+        return [
+            {
+                "label": f"{i + 1}: {supported_ops[op].long_name if op != 'init' and op in supported_ops else ('Initialization Step' if op == 'init' else f'Unknown op ({op})')}",
+                "value": sv}
+            for i, (op, sv) in enumerate(zip(used_ops, sv_keys))
+        ]
+
+    @app.callback(
+        Output('select-state-vector', 'value'),
+        Input('select-state-vector', 'value'),
+        Input('simulation-results', 'data'),
+        prevent_initial_call=True
+    )
+    def update_state_vector_select_value(current_state_vector, simulator_results):
+        print(f"Selected {current_state_vector}")
+
+        if current_state_vector is not None:
+            return current_state_vector
+
+        simulator_results_ideal = simulator_results['ideal']
+        sv_keys = list(simulator_results_ideal.keys())
+
+        return sv_keys[-1]
 
     @app.callback(
         Output('input-visualize-shot', 'max'),
@@ -36,14 +70,14 @@ def create_visualizations(app):
 
     return dmc.Stack(
         [
+            dmc.Title("Visualization", order=4),
             dmc.Stack(
                 [
-                    dmc.Title("Quantum Circuit", order=4),
-                    create_visualizatioh_circuit_diagram(app),
+                    create_visualization_fidelity(app),
+                    create_visualization_circuit_diagram(app),
                 ],
-                p="sm"
+                gap="0"
             ),
-            dmc.Divider(variant="solid", my="none"),
             dmc.Stack([
                 dmc.Flex(
                     [
@@ -78,20 +112,14 @@ def create_visualizations(app):
                         dmc.GridCol(
                             create_visualization_probabilities(app),
                             span=6
-                        ),
-                        dmc.GridCol(
-                            create_visualization_qsphere(app),
-                            span=6
-                        ),
-                        dmc.GridCol(
-                            create_visualization_fidelity(app),
-                            span=6
                         )
                     ],
                     gutter='md'
                 )
-            ], p="sm")
+            ])
         ],
         h="100%",
-        w="100%"
+        w="100%",
+        p="sm",
+        style={'background-color': 'rgb(250,250,250)'},
     )

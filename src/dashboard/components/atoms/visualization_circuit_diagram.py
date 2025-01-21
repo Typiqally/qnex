@@ -6,25 +6,32 @@ from dash import Output, Input, dcc
 from qiskit import qasm3, qasm2
 from qiskit.visualization import circuit_drawer
 
+from src.backend.qiskit.qiskit_simulator import QiskitSimulator
 
-def create_visualizatioh_circuit_diagram(app):
+
+def create_visualization_circuit_diagram(app):
+    qiskit_sim = QiskitSimulator()
+
     fig = go.Figure()
     fig.update_layout(
-        paper_bgcolor="#1e1e1e",  # Set background color
-        plot_bgcolor="#1e1e1e",  # Set plot area background color
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
         xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
             range=[0, 1],
-            tickfont_color="#fff",
         ),
         yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
             range=[-1, 0],
-            tickfont_color="#fff",
         ),
+        margin={'t': 50, 'b': 24, 'l': 36, 'r': 36},
+        height=350,
+        title="Circuit Diagram",
         dragmode='pan'  # Set the default interaction mode to pan
     )
 
@@ -35,17 +42,11 @@ def create_visualizatioh_circuit_diagram(app):
     def update_diagram(qasm_str):
         try:
             # Load the circuit from QASM
-            if "OPENQASM 3.0;" in qasm_str:
-                # Parse the QASM string as qasm
-                circuit = qasm3.loads(qasm_str)
-            else:
-                # Parse the QASM string as qasm3 (default or assumed version)
-                circuit = qasm2.loads(qasm_str)
+            circuit = qiskit_sim.load_circuit(qasm_str)
 
             # Draw the circuit with customized style
             circuit_fig = circuit_drawer(circuit, output='mpl', style={
-                'name': 'iqp-dark',
-                'backgroundcolor': '#1e1e1e'  # Set the background color
+                'backgroundcolor': '#00000000',
             })
 
             # Remove padding by adjusting the figure layout
@@ -77,7 +78,7 @@ def create_visualizatioh_circuit_diagram(app):
 
             # Return the image as a base64-encoded PNG
             return fig
-        except (qasm3.QASM3ImporterError, qasm2.QASM2ParseError) as e:
+        except (qasm3.QASM3ImporterError, qasm2.QASM2ParseError):
             # Provide fallback image in case of error
             return fig
         except Exception as e:

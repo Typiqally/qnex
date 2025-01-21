@@ -1,5 +1,4 @@
 import dash_mantine_components as dmc
-from dash import dcc
 
 
 def create_params_simulation():
@@ -8,13 +7,14 @@ def create_params_simulation():
         dmc.Select(
             label="Backend",
             placeholder="Select one",
-            id="select-simulator",
+            id="select-simulator-backend",
             value="qiskit",
             required=True,
             data=[
                 {"value": "qiskit", "label": "IBM Qiskit"},
-                {"value": "cirq", "label": "Google Cirq"},
-                {"value": "quantumsim", "label": "QuantumSim"},
+                # TODO: Support more backends
+                # {"value": "cirq", "label": "Google Cirq"},
+                # {"value": "quantumsim", "label": "QuantumSim"},
             ]
         ),
     ])

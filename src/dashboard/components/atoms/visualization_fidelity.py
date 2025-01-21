@@ -1,19 +1,9 @@
-import dash_mantine_components as dmc
 import numpy as np
-from dash import Input, Output, dcc
 import plotly.graph_objects as go
+from dash import Input, Output, dcc, State
 
-from src.utils.complex_utils import deserialize_complex_array
-
-
-def compute_fidelity(sv1, sv2):
-    # Ensure both state vectors are normalized
-    sv1 = sv1 / np.linalg.norm(sv1)
-    sv2 = sv2 / np.linalg.norm(sv2)
-
-    # Compute the inner product and then square its magnitude to get fidelity
-    fidelity = np.abs(np.vdot(sv1, sv2)) ** 2
-    return fidelity
+from src.backend.registry import SIMULATOR_REGISTRY
+from src.utils.quantum import compute_quantum_fidelity
 
 
 def create_visualization_fidelity(app):
@@ -23,11 +13,12 @@ def create_visualization_fidelity(app):
             z=[],  # Initial empty data
             colorscale='rdbu',
             colorbar=dict(
-                title='Mean Difference',
+                title='Mean Fidelity',
                 tickvals=[0, 0.5, 1],
                 ticktext=['0', '0.5', '1'],
                 tickmode='array',
                 orientation='h',
+                thickness=10,
             ),
             zmin=0,
             zmax=1
@@ -36,58 +27,67 @@ def create_visualization_fidelity(app):
 
     # Update layout with titles and labels
     fig.update_layout(
-        plot_bgcolor='#1e1e1e',  # Dark background
-        paper_bgcolor='#1e1e1e',  # Dark paper background
-        font_color='#ffffff',
-        transition={'duration': 400, 'easing': "cubic-in-out"},
-        height=164,
-        margin={'t': 24, 'b': 24, 'l': 36, 'r': 36},
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        font_color='black',
         xaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
         ),
         yaxis=dict(
-            zerolinecolor="#333333",
-            gridcolor="#333333",  # Set grid color to light gray
-            tickfont_color="#fff",
+            zerolinecolor="#ebebeb",
+            gridcolor="#ebebeb",
+            tickfont_color="black",
         ),
+        margin={'t': 100, 'b': 24, 'l': 36, 'r': 36},
+        height=140,
+        title="Quantum State Fidelity<br><sup>Measures similarity between ideal and noisy quantum states</sup>",
     )
 
     @app.callback(
         Output('visualization-fidelity', 'figure'),
+        Input('select-simulator-backend', 'value'),
         Input('simulation-results', 'data'),
-        Input('select-state-vector', 'value'),
-        prevent_initial_call=True
+        State('input-qasm', 'value')
     )
-    def update_data(simulation_results, state_vector):
+    def update_data(simulator_ref, simulation_results, qasm_str):
+        # Check if the simulator exists in the SIMULATOR_REGISTRY
+        simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
+
+        if simulator is None or simulation_results is None:
+            # Return an empty array if simulator does not exist
+            return fig
+
         # Extract state vector keys and compute mean fidelity differences
-        sv_keys = [key for key in simulation_results['ideal'] if key.startswith('sv')]
+        sv_keys = list(simulation_results['ideal'].keys())
+
+        supported_ops = simulator.supported_operations()
+        used_ops = ["init"] + simulator.used_operations(qasm_str)
+
+        tick_text = [
+            'Init' if op == 'init' else (supported_ops[op].short_name if op in supported_ops else f"Unknown op ({op})")
+            for i, (op, sv) in enumerate(zip(used_ops, sv_keys))
+        ]
 
         mean_differences = [
-            np.mean([compute_fidelity(deserialize_complex_array(sv_ideal), deserialize_complex_array(sv_noisy)) for sv_ideal, sv_noisy in
+            np.mean([compute_quantum_fidelity(sv_ideal['state_vector'], sv_noisy['state_vector']) for sv_ideal, sv_noisy in
                      zip(simulation_results['ideal'][sv_name], simulation_results['noisy'][sv_name])])
             for sv_name in sv_keys
         ]
 
-
-
-        # Reshape the mean differences for a row-based heatmap (1xN)
         mean_differences = np.array(mean_differences).reshape(1, -1)
 
-        # Update the figure trace with new data
-        fig.update_traces(z=mean_differences )
-
+        fig.update_traces(z=mean_differences)
         fig.update_layout(
-            xaxis={'tickmode': 'array', 'tickvals': np.arange(len(mean_differences[0])), 'ticktext': sv_keys},
+            xaxis={
+                'tickmode': 'array',
+                'tickvals': np.arange(len(mean_differences)),
+                'ticktext': tick_text
+            },
             yaxis={'tickvals': []},
         )
 
         return fig
 
-    return dmc.Stack(
-        [
-            dmc.Title('Fidelity', order=4),
-            dcc.Graph(id='visualization-fidelity', figure=fig),
-        ]
-    )
+    return dcc.Graph(id='visualization-fidelity', figure=fig)

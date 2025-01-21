@@ -1,37 +1,59 @@
+import base64
+import json
+
 import dash_mantine_components as dmc
 from dash import dcc, Output, Input, State, ALL, ctx
 
-from src.backend.base_simulator import NoiseModelType
 from src.backend.registry import SIMULATOR_REGISTRY
+from src.backend.types import NoiseParameterType
 
 
-def create_probability_slider(component_id_index: str, label: str, value: int = 0):
+def create_probability_slider(noise_param: NoiseParameterType, value: int = 0):
     return dmc.Grid(
         [
-            dmc.GridCol(dmc.Text(label, size="sm"), span=4),
             dmc.GridCol(
-                dmc.Slider(
-                    id={"type": "noise-param", "index": component_id_index},
-                    value=value,
-                    marks=[
-                        {"value": 0, "label": "0%"},
-                        {"value": 50, "label": "50%"},
-                        {"value": 100, "label": "100%"},
+                dmc.Tooltip(
+                    [
+                        dmc.Text(noise_param.display_name, size="sm"),
                     ],
-                    w="100%"
+                    label=noise_param.description,
+                    position="right",
+                    multiline=True,
+                    color="gray",
+                    offset=3
+                ),
+                span=4
+            ),
+            dmc.GridCol(
+                dmc.NumberInput(
+                    id={"type": "noise-param", "index": noise_param.value},
+                    value=value,
+                    min=0,
+                    max=100,
+                    rightSection="%",
                 ),
                 span="auto"
-            )
-        ]
+            ),
+        ],
+        gutter="md"
     )
 
 
-def create_switch(component_id_index: str, label: str, value: bool = False):
+def create_switch(noise_param: NoiseParameterType, value: bool = False):
     return dmc.Flex(
         [
-            dmc.Text(label, size="sm"),
+            dmc.Tooltip(
+                [
+                    dmc.Text(noise_param.display_name, size="sm")
+                ],
+                label=noise_param.description,
+                position="right",
+                multiline=True,
+                color="gray",
+                offset=3
+            ),
             dmc.Switch(
-                id={"type": "noise-param", "index": component_id_index},
+                id={"type": "noise-param", "index": noise_param.value},
                 checked=value
             ),
         ],
@@ -40,87 +62,76 @@ def create_switch(component_id_index: str, label: str, value: bool = False):
 
 
 # TODO: This is so ugly, should find a nicer way for this
-NOISE_PARAMS_COMPONENT_MAP = {
-    NoiseModelType.DEPOLARIZING: lambda noise_params: create_probability_slider(
-        "depolarizing",
-        "Depolarizing Probability",
-        noise_params.get("depolarizing", 0)
+NOISE_PARAM_COMPONENT_MAP = {
+    NoiseParameterType.DEPOLARIZING: lambda noise_model: create_probability_slider(
+        NoiseParameterType.DEPOLARIZING,
+        noise_model.get("depolarizing", 0)
     ),
-    NoiseModelType.AMPLITUDE_DAMPING: lambda noise_params: create_probability_slider(
-        "amplitude-damping",
-        "Amplitude Damping",
-        noise_params.get("amplitude-damping", 0)
+    NoiseParameterType.AMPLITUDE_DAMPING: lambda noise_model: create_probability_slider(
+        NoiseParameterType.AMPLITUDE_DAMPING,
+        noise_model.get("amplitude_damping", 0)
     ),
-    NoiseModelType.PHASE_DAMPING: lambda noise_params: create_probability_slider(
-        "phase-damping",
-        "Phase Damping",
-        noise_params.get("phase-damping", 0)
+    NoiseParameterType.PHASE_DAMPING: lambda noise_model: create_probability_slider(
+        NoiseParameterType.PHASE_DAMPING,
+        noise_model.get("phase_damping", 0)
     ),
-    NoiseModelType.READOUT_ERROR: lambda noise_params: create_probability_slider(
-        "readout-error",
-        "Readout Error Probability",
-        noise_params.get("readout-error", 0)
+    NoiseParameterType.READOUT_ERROR: lambda noise_model: create_probability_slider(
+        NoiseParameterType.READOUT_ERROR,
+        noise_model.get("readout_error", 0)
     ),
-    NoiseModelType.BIT_FLIP: lambda noise_params: create_probability_slider("bit-flip", "Bit Flip Probability", noise_params.get("bit-flip", 0)),
-    NoiseModelType.PHASE_FLIP: lambda noise_params: create_probability_slider("phase-flip", "Phase Flip Probability", noise_params.get("phase-flip", 0)),
-    NoiseModelType.THERMAL_RELAXATION: lambda noise_params: create_switch(
-        "thermal-relaxation",
-        "Thermal Relaxation",
-        noise_params.get("thermal-relaxation", False)
+    NoiseParameterType.BIT_FLIP: lambda noise_model: create_probability_slider(
+        NoiseParameterType.BIT_FLIP,
+        noise_model.get("bit_flip", 0)
+    ),
+    NoiseParameterType.PHASE_FLIP: lambda noise_model: create_probability_slider(
+        NoiseParameterType.PHASE_FLIP, noise_model.get("phase_flip", 0)),
+    NoiseParameterType.THERMAL_RELAXATION: lambda noise_model: create_switch(
+        NoiseParameterType.THERMAL_RELAXATION,
+        noise_model.get("thermal_relaxation", False)
     )
 }
 
 
 def create_params_noise(app):
-    profile_manager = app.server.profile_manager
+    @app.callback(
+        Output('download-noise-model-export', 'data'),
+        Input('btn-noise-model-export', 'n_clicks'),
+        State('noise-model', 'data'),
+        prevent_initial_call=True,
+    )
+    def export_noise_profile(_, noise_model):
+        return dcc.send_string(json.dumps(noise_model), "noise_model.json")
 
     @app.callback(
-        Output('select-noise-profile', 'data'),
-        Output('select-noise-profile', 'value'),
-        Input('btn-noise-profile-save', 'n_clicks'),
-        State('noise-profile-name', 'value'),
-        State('noise-params', 'data')
+        Output('noise-model', 'data', allow_duplicate=True),
+        Output('select-gate', 'value', allow_duplicate=True),
+        Input('import-noise-model', 'contents'),
+        prevent_initial_call=True,
     )
-    def save_noise_profile(_, profile_name, noise_params):
-        if profile_name is None:
-            return profile_manager.list_profiles(), None
+    def import_noise_model(contents_encoded):
+        try:
+            b64_part = contents_encoded.split(',')[1]
+            contents_decoded = base64.b64decode(b64_part).decode('utf-8')
 
-        profile_manager.save_profile(profile_name, noise_params)
+            noise_model = json.loads(contents_decoded)
+            print("Importing noise model", noise_model)
 
-        return profile_manager.list_profiles(), profile_name
+            return noise_model, None
+        except Exception as e:
+            raise e
 
     @app.callback(
-        Output('select-noise-profile', 'data', allow_duplicate=True),
-        Output('select-noise-profile', 'value', allow_duplicate=True),
-        Input('btn-noise-profile-delete', 'n_clicks'),
-        State('select-noise-profile', 'value'),
-        prevent_initial_call=True
+        Output('noise-model', 'data'),
+        Output('select-gate', 'value'),
+        Input('btn-noise-model-reset', 'n_clicks'),
+        prevent_initial_call=True,
     )
-    def delete_noise_profile(_, selected_profile):
-        if selected_profile is None:
-            return profile_manager.list_profiles(), None
-
-        profile_manager.delete_profile(selected_profile)
-
-        return profile_manager.list_profiles(), None
-
-    @app.callback(
-        Output('noise-params', 'data'),
-        Output('noise-profile-name', 'value'),
-        Input('select-noise-profile', 'value'),
-        prevent_initial_call=True
-    )
-    def update_noise_profiles(selected_profile):
-        if selected_profile is None:
-            return {}, None
-
-        profile = profile_manager.load_profile(selected_profile)
-
-        return profile, selected_profile
+    def reset_noise_model(_):
+        return {}, None
 
     @app.callback(
         Output('select-gate', 'data'),
-        Input('select-simulator', 'value'),
+        Input('select-simulator-backend', 'value'),
         Input("input-qasm", "value"),
     )
     def update_select_gate_data(simulator_ref, qasm_str):
@@ -131,23 +142,25 @@ def create_params_noise(app):
             # Return an empty array if simulator does not exist
             return []
 
-        # Load the current circuit
-        simulator.load_circuit(qasm_str)
-
         # Get the gates from the simulator
-        supported_gates = simulator.supported_gates()
-        used_gates = simulator.used_gates()
+        supported_gates = simulator.supported_operations()
+        used_operations = set(simulator.used_operations(qasm_str))
 
-        # Return the gates as a list of dicts with "value" and "label" keys
-        return [{"value": gate_ref, "label": supported_gates[gate_ref].display_name} for gate_ref in used_gates]
+        # Filter and map used gates to supported ones
+        filtered_gates = [
+            {"label": supported_gates[gate_ref].long_name, "value": gate_ref}
+            for gate_ref in used_operations if gate_ref in supported_gates and gate_ref != "barrier"
+        ]
+
+        return filtered_gates
 
     @app.callback(
         Output('noise-gate-params', 'children'),
         Input('select-gate', 'value'),
-        Input('select-simulator', 'value'),
-        State("noise-params", 'data'),
+        Input('select-simulator-backend', 'value'),
+        State("noise-model", 'data'),
     )
-    def update_gate_noise_params_children(gate_ref, simulator_ref, current_noise_params):
+    def update_gate_noise_model_children(gate_ref, simulator_ref, current_noise_model):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
         simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
 
@@ -155,60 +168,61 @@ def create_params_noise(app):
             # Return an empty array if simulator does not existF
             return []
 
-        gates = simulator.supported_gates()
+        gates = simulator.supported_operations()
         gate_info = gates[gate_ref]
 
-        gate_noise_params_components = [
-            NOISE_PARAMS_COMPONENT_MAP[noise_model](current_noise_params.get(gate_ref, {}))
-            for noise_model in gate_info.noise_models
+        gate_noise_model_components = [
+            NOISE_PARAM_COMPONENT_MAP[noise_param](current_noise_model.get(gate_ref, {}))
+            for noise_param in gate_info.supported_noise_params
         ]
 
         other_components = [
             dmc.Alert(id="noise-gate-description", color="blue", children=gate_info.description),
             dmc.NumberInput(
-                id={"type": "noise-param", "index": "gate-time"},
+                id={"type": "noise-param", "index": "gate_time"},
                 label="Gate time",
-                description="Execution time in microseconds",
-                value=current_noise_params.get("gate-time", 50),
-                rightSection="µs"
+                description="Execution time in nanoseconds",
+                value=current_noise_model.get("gate_time", 50),
+                rightSection="ns"
             ),
             dmc.Grid(
                 [
+                    # Taken from https://qcs.rigetti.com/qpus
                     dmc.GridCol(
                         dmc.NumberInput(
                             id={"type": "noise-param", "index": "t1"},
                             label="Relaxation Time (T1)",
-                            value=current_noise_params.get("t1", 30),
-                            rightSection="µs"),
+                            value=current_noise_model.get("t1", 19000),
+                            rightSection="ns"),
                         span=6
                     ),
                     dmc.GridCol(
                         dmc.NumberInput(
                             id={"type": "noise-param", "index": "t2"},
                             label="Dephasing Time (T2)",
-                            value=current_noise_params.get("t2", 20),
-                            rightSection="µs"
+                            value=current_noise_model.get("t2", 20000),
+                            rightSection="ns"
                         ),
                         span=6)
                 ]
             )
         ]
 
-        return other_components + gate_noise_params_components
+        return other_components + gate_noise_model_components
 
     @app.callback(
-        Output("noise-params", "data", allow_duplicate=True),
+        Output('noise-model', 'data', allow_duplicate=True),
         Input('select-gate', 'value'),
         Input({"type": "noise-param", "index": ALL}, "value"),
         Input({"type": "noise-param", "index": ALL}, "checked"),
-        State("noise-params", "data"),
+        State("noise-model", "data"),
         prevent_initial_call=True,
     )
-    def update_dynamic_params(gate_ref, values, checked_values, current_noise_params):
-        current_noise_params = current_noise_params or {}
+    def update_dynamic_params(gate_ref, values, checked_values, current_noise_model):
+        current_noise_model = current_noise_model or {}
 
         if not gate_ref:
-            return current_noise_params
+            return current_noise_model
 
         noise_gate_params = {}
 
@@ -221,60 +235,57 @@ def create_params_noise(app):
 
             noise_gate_params[param_id] = param_value
 
-        current_noise_params[gate_ref] = noise_gate_params
+        current_noise_model[gate_ref] = noise_gate_params
 
-        return current_noise_params
+        return current_noise_model
 
     return dmc.Stack([
-        dcc.Store(id='noise-params'),
-        dmc.Title("Noise profile", order=4),
-        dmc.Grid(
+        dcc.Store(id='noise-model'),
+        dcc.Download(id="download-noise-model-export"),
+        dmc.Title("Noise", order=4),
+        dmc.Select(
+            label="Noise model",
+            placeholder="Select a model",
+            description="Select a pre-defined model, or choose custom to create your own",
+            id="select-noise-model",
+            value="custom",
+            data=[
+                {"label": "Custom", "value": "custom"},
+            ]
+        ),
+        dmc.Divider(label="Model editor", variant="dashed"),
+        dmc.Group(
             [
-                dmc.GridCol(
-                    dmc.Select(
-                        label="Profile",
-                        placeholder="Select a profile",
-                        id="select-noise-profile",
-                        data=[]
-                    ),
-                    span=8
+                dcc.Upload(
+                    id="import-noise-model",
+                    children=[
+                        dmc.Button(
+                            "Import",
+                            color="gray",
+                            size="xs",
+                            fullWidth=True,
+                        )
+                    ],
                 ),
-                dmc.GridCol(
-                    dmc.Button(
-                        "Delete",
-                        id="btn-noise-profile-delete",
-                        color="red"
-                    ),
-                    span=4
+                dmc.Button(
+                    "Export",
+                    id="btn-noise-model-export",
+                    size="xs",
+                ),
+                dmc.Button(
+                    "Reset",
+                    id="btn-noise-model-reset",
+                    color="red",
+                    size="xs",
                 )
             ],
-            align="flex-end",
+            grow=True,
+            gap="xs"
         ),
-        dmc.Grid(
-            [
-                dmc.GridCol(
-                    dmc.TextInput(
-                        id="noise-profile-name",
-                        label="Profile name"
-                    ),
-                    span=8
-                ),
-                dmc.GridCol(
-                    dmc.Button(
-                        "Save",
-                        id="btn-noise-profile-save"
-                    ),
-                    span=4
-                )
-            ],
-            align="flex-end",
-        ),
-        dmc.Divider(),
-        dmc.Title("Noise model editor", order=4),
         dmc.Select(
             label="Gate",
             placeholder="Select a gate",
-            description="Select a gate to configure its noise parameters",
+            description="Select a gate to configure its noise parameters, only used gates are shown",
             id="select-gate",
             data=[]
         ),
