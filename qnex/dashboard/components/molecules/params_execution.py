@@ -15,6 +15,7 @@ def create_params_execution(app):
         State('input-qasm', 'value'),
         State('input-shots', 'value'),
         State('input-seed', 'value'),
+        State('select-noise-model', 'value'),
         State('noise-model', 'data'),
         prevent_initial_call=True,
         running=[
@@ -23,7 +24,7 @@ def create_params_execution(app):
         ],
         cancel=[Input("btn-simulation-cancel", "n_clicks")],
     )
-    def display_values(_, simulator_ref, qasm_str, shots, seed, noise_params):
+    def display_values(_, simulator_ref, qasm_str, shots, seed, noise_model_name, noise_params):
         # Check if the simulator exists in the SIMULATOR_REGISTRY
         simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
 
@@ -35,7 +36,7 @@ def create_params_execution(app):
             seed = None
 
         # Simulate the circuit with ideal and noisy conditions
-        result = simulator.simulate(qasm_str, shots or 1, seed, noise_params)
+        result = simulator.simulate(qasm_str, shots or 1, seed, noise_model_name, noise_params)
 
         # Return the processed results
         return asdict(result)

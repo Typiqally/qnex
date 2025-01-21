@@ -11,8 +11,12 @@ class BaseSimulator(ABC):
         pass
 
     @abstractmethod
-    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_params: dict) -> SimulationResult:
+    def simulate(self, qasm_str: str, shots: int, seed: Optional[int], noise_profile_name: str, noise_params: Optional[dict]) -> SimulationResult:
         """Run the simulation with the given noise parameters."""
+        pass
+
+    def supported_profiles(self) -> list[str]:
+        """Return a list of supported profiles."""
         pass
 
     @abstractmethod

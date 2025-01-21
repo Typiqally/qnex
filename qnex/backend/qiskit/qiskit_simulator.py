@@ -1,3 +1,4 @@
+import importlib
 import random
 from typing import Optional
 
@@ -16,6 +17,34 @@ from qnex.utils.complex_utils import serialize_complex_array
 class QiskitSimulator(BaseSimulator):
     def __init__(self):
         self.simulator = QasmSimulator()
+        self.profile_backends: dict[str, str] = {
+            'ibm-santiago': 'qiskit_ibm_runtime.fake_provider.fake_provider.FakeSantiagoV2',
+            'ibm-oslo': 'qiskit_ibm_runtime.fake_provider.fake_provider.FakeOslo',
+            'ibm-kyiv': 'qiskit_ibm_runtime.fake_provider.fake_provider.FakeKyiv',
+            # Add more backends here as needed
+        }
+
+    def load_backend(self, profile_name: str):
+        """Dynamically load a backend by name."""
+        try:
+            backend_module = self.profile_backends.get(profile_name)
+            if profile_name not in self.profile_backends:
+                raise ValueError(f"Backend '{profile_name}' is not defined.")
+
+            module_path, class_name = backend_module.rsplit('.', 1)  # Split module path and class name
+
+            # Dynamically import the module
+            module = importlib.import_module(module_path)
+            backend_class = getattr(module, class_name)
+
+            # Instantiate the class
+            return backend_class()
+        except (ImportError, AttributeError, ValueError) as e:
+            print(f"Error loading backend {profile_name}: {e}")
+            return None
+
+    def supported_profiles(self) -> list[str]:
+        return list(self.profile_backends.keys())
 
     def load_circuit(self, qasm_str: str):
         # Check the QASM version in the input string
@@ -114,8 +143,17 @@ class QiskitSimulator(BaseSimulator):
         if seed is None:
             seed = random.randint(1, 99999)
 
-        # noise_model = self.create_noise_model(noise_params)
-        noise_model = NoiseModel.from_backend(FakeSantiagoV2())
+        # Apply noise model based on the provided input
+        if noise_profile_name and noise_profile_name != 'custom':
+            # Load noise model from a specific backend (quantum computer) using its profile name
+            backend = self.load_backend(noise_profile_name)
+            noise_model = NoiseModel.from_backend(backend)
+        elif noise_params and noise_profile_name == 'custom':
+            # If noise params are provided, create a custom noise model
+            noise_model = self.create_noise_model(noise_params)
+        else:
+            # If no noise info is provided, use a default (ideal) noise model
+            noise_model = NoiseModel()  # This creates an ideal model (no noise)
 
         print(f"Executing simulation with seed {seed} and noise model", noise_model)
 

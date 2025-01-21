@@ -94,12 +94,39 @@ NOISE_PARAM_COMPONENT_MAP = {
 
 def create_params_noise(app):
     @app.callback(
+        Output('select-noise-model', 'data'),
+        Input('select-simulator-backend', 'value'),
+    )
+    def update_noise_models(simulator_ref):
+        # Check if the simulator exists in the SIMULATOR_REGISTRY
+        simulator = SIMULATOR_REGISTRY.get(simulator_ref, None)
+
+        if not simulator:
+            # Return an empty array if simulator does not exist
+            return []
+
+        profiles = [{"label": profile, "value": profile} for profile in simulator.supported_profiles()]
+        custom = [{"label": "Custom", "value": "custom"}]
+
+        return profiles + custom
+
+    @app.callback(
+        Output('noise-model-editor', 'style'),
+        Input('select-noise-model', 'value')
+    )
+    def toggle_noise_model_editor_visibility(noise_profile_name):
+        if noise_profile_name == 'custom':
+            return {'display': 'block'}
+
+        return {'display': 'none'}
+
+    @app.callback(
         Output('download-noise-model-export', 'data'),
         Input('btn-noise-model-export', 'n_clicks'),
         State('noise-model', 'data'),
         prevent_initial_call=True,
     )
-    def export_noise_profile(_, noise_model):
+    def export_noise_model(_, noise_model):
         return dcc.send_string(json.dumps(noise_model), "noise_model.json")
 
     @app.callback(
@@ -248,50 +275,52 @@ def create_params_noise(app):
             placeholder="Select a model",
             description="Select a pre-defined model, or choose custom to create your own",
             id="select-noise-model",
-            value="custom",
-            data=[
-                {"label": "Custom", "value": "custom"},
-            ]
-        ),
-        dmc.Divider(label="Model editor", variant="dashed"),
-        dmc.Group(
-            [
-                dcc.Upload(
-                    id="import-noise-model",
-                    children=[
-                        dmc.Button(
-                            "Import",
-                            color="gray",
-                            size="xs",
-                            fullWidth=True,
-                        )
-                    ],
-                ),
-                dmc.Button(
-                    "Export",
-                    id="btn-noise-model-export",
-                    size="xs",
-                ),
-                dmc.Button(
-                    "Reset",
-                    id="btn-noise-model-reset",
-                    color="red",
-                    size="xs",
-                )
-            ],
-            grow=True,
-            gap="xs"
-        ),
-        dmc.Select(
-            label="Gate",
-            placeholder="Select a gate",
-            description="Select a gate to configure its noise parameters, only used gates are shown",
-            id="select-gate",
             data=[]
         ),
-        dmc.Stack(
-            id="noise-gate-params",
-            children=[],
-            gap="xl"
+        dmc.Stack([
+            dmc.Divider(label="Model editor", variant="dashed"),
+            dmc.Group(
+                [
+                    dcc.Upload(
+                        id="import-noise-model",
+                        children=[
+                            dmc.Button(
+                                "Import",
+                                color="gray",
+                                size="xs",
+                                fullWidth=True,
+                            )
+                        ],
+                    ),
+                    dmc.Button(
+                        "Export",
+                        id="btn-noise-model-export",
+                        size="xs",
+                    ),
+                    dmc.Button(
+                        "Reset",
+                        id="btn-noise-model-reset",
+                        color="red",
+                        size="xs",
+                    )
+                ],
+                grow=True,
+                gap="xs"
+            ),
+            dmc.Select(
+                label="Gate",
+                placeholder="Select a gate",
+                description="Select a gate to configure its noise parameters, only used gates are shown",
+                id="select-gate",
+                data=[]
+            ),
+            dmc.Stack(
+                id="noise-gate-params",
+                children=[],
+                gap="xl"
+            )
+        ],
+            id="noise-model-editor",
+            style={"display": "none"}
         )
     ])
