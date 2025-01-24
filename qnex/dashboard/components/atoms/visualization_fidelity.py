@@ -66,8 +66,8 @@ def create_visualization_fidelity(app):
         used_ops = ["init"] + simulator.used_operations(qasm_str)
 
         tick_text = [
-            'Init' if op == 'init' else (supported_ops[op].short_name if op in supported_ops else f"Unknown op ({op})")
-            for i, (op, sv) in enumerate(zip(used_ops, sv_keys))
+            'Init' if op == 'init' else (supported_ops[op].short_name if op in supported_ops else f"?")
+            for (op, sv) in zip(used_ops, sv_keys)
         ]
 
         mean_differences = [
