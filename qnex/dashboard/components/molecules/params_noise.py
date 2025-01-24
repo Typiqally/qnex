@@ -16,6 +16,7 @@ def create_probability_slider(noise_param: NoiseParameterType, value: int = 0):
                     [
                         dmc.Text(noise_param.display_name, size="sm"),
                     ],
+                    w=220,
                     label=noise_param.description,
                     position="right",
                     multiline=True,
@@ -46,6 +47,7 @@ def create_switch(noise_param: NoiseParameterType, value: bool = False):
                 [
                     dmc.Text(noise_param.display_name, size="sm")
                 ],
+                w=220,
                 label=noise_param.description,
                 position="right",
                 multiline=True,

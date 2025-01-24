@@ -1,18 +1,44 @@
 from enum import Enum
-
 from dataclasses import dataclass
-
 import numpy as np
 
 
 class NoiseParameterType(Enum):
-    BIT_FLIP = ("bit_flip", "Bit Flip", "Models random bit-flip errors in qubits.")
-    PHASE_FLIP = ("phase_flip", "Phase Flip", "Models random phase-flip errors in qubits.")
-    PHASE_DAMPING = ("phase_damping", "Phase Damping", "Models phase damping due to environment interaction.")
-    THERMAL_RELAXATION = ("thermal_relaxation", "Thermal Relaxation", "Models relaxation due to thermal noise.")
-    AMPLITUDE_DAMPING = ("amplitude_damping", "Amplitude Damping", "Models energy loss in qubits.")
-    DEPOLARIZING = ("depolarizing", "Depolarizing", "Models depolarizing noise affecting all states equally.")
-    READOUT_ERROR = ("readout_error", "Readout Error", "Models errors during qubit measurement.")
+    BIT_FLIP = (
+        "bit_flip",
+        "Bit Flip",
+        "A bit-flip error occurs when a qubit's state unexpectedly flips from |0⟩ to |1⟩ or vice versa."
+    )
+    PHASE_FLIP = (
+        "phase_flip",
+        "Phase Flip",
+        "A phase flip occurs when the relative phase of the |1⟩ state in a qubit is inverted, impacting interference patterns."
+    )
+    PHASE_DAMPING = (
+        "phase_damping",
+        "Phase Damping",
+        "Phase damping describes the loss of phase coherence caused by interaction with the surrounding environment."
+    )
+    THERMAL_RELAXATION = (
+        "thermal_relaxation",
+        "Thermal Relaxation",
+        "Thermal relaxation describes how a qubit loses its excited state and settles into its ground state due to energy exchange with the environment."
+    )
+    AMPLITUDE_DAMPING = (
+        "amplitude_damping",
+        "Amplitude Damping",
+        "Amplitude damping models energy loss in a qubit, where the qubit transitions from the |1⟩ state to the |0⟩ state as energy dissipates."
+    )
+    DEPOLARIZING = (
+        "depolarizing",
+        "Depolarizing",
+        "Depolarizing noise simulates a qubit becoming a mixed state, losing quantum information with an equal probability of flipping to any state."
+    )
+    READOUT_ERROR = (
+        "readout_error",
+        "Readout Error",
+        "Readout error models inaccuracies during the measurement process, where the observed qubit state may differ from the actual state."
+    )
 
     def __init__(self, value, display_name, description):
         self._value_ = value
