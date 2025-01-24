@@ -310,14 +310,14 @@ class QiskitSimulator(BaseSimulator):
                 short_name="CCX",
                 long_name="CCX (Toffoli)",
                 description="Three-qubit controlled-controlled-NOT",
-                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING],
                 num_qubits=3
             ),
             "ccz": Gate(
                 short_name="CCZ",
                 long_name="CCZ",
                 description="Three-qubit controlled-controlled-Z",
-                supported_noise_params=[NoiseParameterType.DEPOLARIZING, NoiseParameterType.BIT_FLIP, NoiseParameterType.PHASE_FLIP],
+                supported_noise_params=[NoiseParameterType.DEPOLARIZING],
                 num_qubits=3
             ),
             "u": Gate(
